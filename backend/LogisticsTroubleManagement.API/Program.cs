@@ -2,6 +2,9 @@ using Serilog;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using LogisticsTroubleManagement.Infrastructure.Data;
+using LogisticsTroubleManagement.Infrastructure.Repositories;
+using LogisticsTroubleManagement.Domain.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,9 +31,19 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add Entity Framework Core
-// TODO: Add DbContext configuration when Infrastructure layer is ready
-// builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add Database Seeder
+builder.Services.AddScoped<DatabaseSeeder>();
+
+// Add Repository Pattern and Unit of Work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
+builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<IEffectivenessRepository, EffectivenessRepository>();
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation();

@@ -40,29 +40,30 @@
   - [x] 見積時間: 4時間
 
 ### 🟡 フェーズ2: ドメインモデルとデータベース設計 (優先度: 高)
-- [ ] 2.1 ドメインモデルの実装
-  - [ ] BaseEntityクラスの作成
-  - [ ] Incidentエンティティの実装
-  - [ ] Userエンティティの実装（簡易版）
-  - [ ] Attachmentエンティティの実装
-  - [ ] AuditLogエンティティの実装（簡易版）
-  - [ ] 列挙型の定義 (IncidentStatus, Priority, UserRole等)
-  - [ ] 値オブジェクトの実装 (Email, PhoneNumber等)
-  - [ ] 見積時間: 6時間
+- [x] 2.1 ドメインモデルの実装
+  - [x] BaseEntityクラスの作成
+  - [x] Incidentエンティティの実装
+  - [x] Userエンティティの実装（簡易版）
+  - [x] Attachmentエンティティの実装
+  - [x] AuditLogエンティティの実装（簡易版）
+  - [x] 列挙型の定義 (IncidentStatus, Priority, UserRole等)
+  - [x] 値オブジェクトの実装 (Email, PhoneNumber等)
+  - [x] 見積時間: 6時間
 
-- [ ] 2.2 Entity Framework Core設定
-  - [ ] ApplicationDbContextの実装
-  - [ ] エンティティ設定クラスの作成
-  - [ ] 初期マイグレーションの作成
-  - [ ] データベース接続のテスト
-  - [ ] サンプルデータの投入
-  - [ ] 見積時間: 4時間
+- [x] 2.2 Entity Framework Core設定
+  - [x] ApplicationDbContextの実装
+  - [x] エンティティ設定クラスの作成
+  - [x] 初期マイグレーションの作成（ベースライン）
+  - [x] データベース接続のテスト（マイグレーション適用）
+  - [x] サンプルデータの投入
+  - [x] 見積時間: 4時間
 
-- [ ] 2.3 リポジトリパターンの実装
-  - [ ] IRepository<T>インターフェースの作成
-  - [ ] 各エンティティのリポジトリ実装
-  - [ ] Unit of Workパターンの実装
-  - [ ] 見積時間: 5時間
+- [x] 2.3 リポジトリパターンの実装
+  - [x] IRepository<T>インターフェースの作成
+  - [x] 各エンティティのリポジトリ実装
+  - [x] Unit of Workパターンの実装
+  - [x] DIコンテナへの登録
+  - [x] 見積時間: 5時間
 
 ### 🟡 フェーズ3: バックエンドAPI開発 (優先度: 高)
 - [ ] 3.1 トラブル管理API（モック版）
