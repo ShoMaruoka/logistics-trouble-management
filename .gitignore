@@ -1,0 +1,13 @@
+/database/connection-string.txt
+/database/docker-compose.yml
+/database/test-connection.ps1
+/backend/LogisticsTroubleManagement.API/bin
+/backend/LogisticsTroubleManagement.API/obj
+/backend/LogisticsTroubleManagement.Core/bin
+/backend/LogisticsTroubleManagement.Core/obj
+/backend/LogisticsTroubleManagement.Domain/bin
+/backend/LogisticsTroubleManagement.Domain/obj
+/backend/LogisticsTroubleManagement.Infrastructure/bin
+/backend/LogisticsTroubleManagement.Infrastructure/obj
+/backend/LogisticsTroubleManagement.Tests/bin
+/backend/LogisticsTroubleManagement.Tests/obj
