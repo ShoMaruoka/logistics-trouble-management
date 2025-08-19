@@ -14,16 +14,19 @@ public class EffectivenessConfiguration : IEntityTypeConfiguration<Effectiveness
 
 		builder.Property(e => e.EffectivenessType)
 			.IsRequired()
-			.HasMaxLength(50);
-		builder.Property(e => e.Value)
+			.HasMaxLength(100);
+		builder.Property(e => e.BeforeValue)
 			.IsRequired()
 			.HasColumnType("decimal(10,2)");
-		builder.Property(e => e.Unit)
-			.IsRequired(false)
-			.HasMaxLength(20);
+		builder.Property(e => e.AfterValue)
+			.IsRequired()
+			.HasColumnType("decimal(10,2)");
+		builder.Property(e => e.ImprovementRate)
+			.IsRequired()
+			.HasColumnType("decimal(5,2)");
 		builder.Property(e => e.Description)
-			.IsRequired(false)
-			.HasMaxLength(500);
+			.IsRequired()
+			.HasMaxLength(1000);
 		builder.Property(e => e.MeasuredAt)
 			.HasDefaultValueSql("GETUTCDATE()")
 			.IsRequired();

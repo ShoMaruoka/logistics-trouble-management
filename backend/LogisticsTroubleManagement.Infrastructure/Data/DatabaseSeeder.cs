@@ -252,18 +252,20 @@ public class DatabaseSeeder
 			Effectiveness.Create(
 				resolvedIncidents[0].Id,
 				"COST_REDUCTION",
-				50000m,
-				users[1].Id, // manager1
-				"円",
-				"修理費用の削減"
+				100000m, // BeforeValue
+				50000m,  // AfterValue
+				50.0m,   // ImprovementRate (50%削減)
+				"修理費用の削減",
+				users[1].Id // manager1
 			),
 			Effectiveness.Create(
 				resolvedIncidents[0].Id,
 				"TIME_SAVING",
-				4m,
-				users[1].Id, // manager1
-				"時間",
-				"修理時間の短縮"
+				8m,      // BeforeValue
+				4m,      // AfterValue
+				50.0m,   // ImprovementRate (50%短縮)
+				"修理時間の短縮",
+				users[1].Id // manager1
 			)
 		};
 
@@ -275,18 +277,20 @@ public class DatabaseSeeder
 				Effectiveness.Create(
 					resolvedIncidents[1].Id,
 					"QUALITY_IMPROVEMENT",
-					95m,
-					users[2].Id, // manager2
-					"%",
-					"温度管理精度の向上"
+					85m,     // BeforeValue
+					95m,     // AfterValue
+					11.76m,  // ImprovementRate (約11.76%向上)
+					"温度管理精度の向上",
+					users[2].Id // manager2
 				),
 				Effectiveness.Create(
 					resolvedIncidents[1].Id,
 					"SAFETY",
-					100m,
-					users[2].Id, // manager2
-					"%",
-					"食品安全性の確保"
+					90m,     // BeforeValue
+					100m,    // AfterValue
+					11.11m,  // ImprovementRate (約11.11%向上)
+					"食品安全性の確保",
+					users[2].Id // manager2
 				)
 			});
 		}

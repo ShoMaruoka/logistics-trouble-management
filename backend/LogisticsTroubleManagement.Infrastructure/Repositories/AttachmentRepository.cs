@@ -16,6 +16,11 @@ public class AttachmentRepository : Repository<Attachment>, IAttachmentRepositor
         return await _dbSet.Where(a => a.IncidentId == incidentId).ToListAsync();
     }
 
+    public async Task<IEnumerable<Attachment>> GetAttachmentsByIncidentAsync(int incidentId)
+    {
+        return await _dbSet.Where(a => a.IncidentId == incidentId).ToListAsync();
+    }
+
     public async Task<IEnumerable<Attachment>> GetByUploadedByAsync(int userId)
     {
         return await _dbSet.Where(a => a.UploadedById == userId).ToListAsync();

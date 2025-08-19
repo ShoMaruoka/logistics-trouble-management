@@ -3,10 +3,11 @@ namespace LogisticsTroubleManagement.Domain.Entities;
 public class Effectiveness : BaseEntity
 {
     public int IncidentId { get; private set; }
-    public string EffectivenessType { get; private set; }
-    public decimal Value { get; private set; }
-    public string? Unit { get; private set; }
-    public string? Description { get; private set; }
+    public string EffectivenessType { get; private set; } = string.Empty;
+    public decimal BeforeValue { get; private set; }
+    public decimal AfterValue { get; private set; }
+    public decimal ImprovementRate { get; private set; }
+    public string Description { get; private set; } = string.Empty;
     public int MeasuredById { get; private set; }
     public DateTime MeasuredAt { get; private set; }
 
@@ -16,70 +17,78 @@ public class Effectiveness : BaseEntity
 
     private Effectiveness() { } // For EF Core
 
-    public Effectiveness(int incidentId, string effectivenessType, decimal value, int measuredById, string? unit = null, string? description = null)
+    public Effectiveness(int incidentId, string effectivenessType, decimal beforeValue, decimal afterValue, decimal improvementRate, string description, int measuredById)
     {
         IncidentId = incidentId;
         EffectivenessType = effectivenessType ?? throw new ArgumentNullException(nameof(effectivenessType));
-        Value = value;
+        BeforeValue = beforeValue;
+        AfterValue = afterValue;
+        ImprovementRate = improvementRate;
+        Description = description ?? throw new ArgumentNullException(nameof(description));
         MeasuredById = measuredById;
-        Unit = unit;
-        Description = description;
         MeasuredAt = DateTime.UtcNow;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public static Effectiveness Create(int incidentId, string effectivenessType, decimal value, int measuredById, string? unit = null, string? description = null)
+    public static Effectiveness Create(int incidentId, string effectivenessType, decimal beforeValue, decimal afterValue, decimal improvementRate, string description, int measuredById)
     {
-        if (value < 0)
-            throw new ArgumentException("Value cannot be negative", nameof(value));
+        if (beforeValue < 0)
+            throw new ArgumentException("Before value cannot be negative", nameof(beforeValue));
 
-        return new Effectiveness(incidentId, effectivenessType, value, measuredById, unit, description);
+        if (afterValue < 0)
+            throw new ArgumentException("After value cannot be negative", nameof(afterValue));
+
+        if (string.IsNullOrWhiteSpace(effectivenessType))
+            throw new ArgumentException("Effectiveness type cannot be empty", nameof(effectivenessType));
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description cannot be empty", nameof(description));
+
+        return new Effectiveness(incidentId, effectivenessType, beforeValue, afterValue, improvementRate, description, measuredById);
     }
 
-    public void UpdateValue(decimal newValue)
+    public void UpdateEffectiveness(string effectivenessType, decimal beforeValue, decimal afterValue, decimal improvementRate, string description)
     {
-        if (newValue < 0)
-            throw new ArgumentException("Value cannot be negative", nameof(newValue));
+        if (beforeValue < 0)
+            throw new ArgumentException("Before value cannot be negative", nameof(beforeValue));
 
-        Value = newValue;
+        if (afterValue < 0)
+            throw new ArgumentException("After value cannot be negative", nameof(afterValue));
+
+        if (string.IsNullOrWhiteSpace(effectivenessType))
+            throw new ArgumentException("Effectiveness type cannot be empty", nameof(effectivenessType));
+
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description cannot be empty", nameof(description));
+
+        EffectivenessType = effectivenessType;
+        BeforeValue = beforeValue;
+        AfterValue = afterValue;
+        ImprovementRate = improvementRate;
+        Description = description;
         MeasuredAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateDescription(string? description)
+    public string GetFormattedImprovementRate()
     {
-        Description = description;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void UpdateUnit(string? unit)
-    {
-        Unit = unit;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public string GetFormattedValue()
-    {
-        if (string.IsNullOrEmpty(Unit))
-            return Value.ToString("F2");
-
-        return $"{Value:F2} {Unit}";
+        return $"{ImprovementRate:F2}%";
     }
 
     public bool IsPositiveEffect()
     {
-        return Value > 0;
+        return ImprovementRate > 0;
     }
 
     public bool IsNegativeEffect()
     {
-        return Value < 0;
+        return ImprovementRate < 0;
     }
 
     public bool IsNeutralEffect()
     {
-        return Value == 0;
+        return ImprovementRate == 0;
     }
 
     public string GetEffectivenessCategory()
@@ -100,7 +109,7 @@ public class Effectiveness : BaseEntity
     public string GetEffectivenessDescription()
     {
         var category = GetEffectivenessCategory();
-        var formattedValue = GetFormattedValue();
+        var formattedValue = GetFormattedImprovementRate();
         
         if (string.IsNullOrEmpty(Description))
             return $"{category}: {formattedValue}";

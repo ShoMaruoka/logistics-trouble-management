@@ -16,6 +16,11 @@ public class EffectivenessRepository : Repository<Effectiveness>, IEffectiveness
         return await _dbSet.Where(e => e.IncidentId == incidentId).ToListAsync();
     }
 
+    public async Task<IEnumerable<Effectiveness>> GetEffectivenessByIncidentAsync(int incidentId)
+    {
+        return await _dbSet.Where(e => e.IncidentId == incidentId).ToListAsync();
+    }
+
     public async Task<IEnumerable<Effectiveness>> GetByTypeAsync(string effectivenessType)
     {
         return await _dbSet.Where(e => e.EffectivenessType == effectivenessType).ToListAsync();
@@ -35,13 +40,13 @@ public class EffectivenessRepository : Repository<Effectiveness>, IEffectiveness
     {
         return await _dbSet
             .Where(e => e.EffectivenessType == effectivenessType)
-            .AverageAsync(e => e.Value);
+            .AverageAsync(e => e.ImprovementRate);
     }
 
     public async Task<decimal> GetTotalValueByTypeAsync(string effectivenessType)
     {
         return await _dbSet
             .Where(e => e.EffectivenessType == effectivenessType)
-            .SumAsync(e => e.Value);
+            .SumAsync(e => e.ImprovementRate);
     }
 }

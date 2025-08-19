@@ -1,35 +1,35 @@
 import * as React from "react";
 
 interface ChartContainerProps {
-  children: React.ReactNode;
-  config: any;
-  className?: string;
+	children: React.ReactNode;
+	config: Record<string, unknown>;
+	className?: string;
 }
 
-export function ChartContainer({ children, config, className }: ChartContainerProps) {
-  return (
-    <div className={className}>
-      {children}
-    </div>
-  );
+export function ChartContainer({ children, className }: ChartContainerProps) {
+	return (
+		<div className={className}>
+			{children}
+		</div>
+	);
 }
 
 interface ChartTooltipProps {
-  children: React.ReactNode;
-  cursor?: boolean;
-  content?: React.ComponentType<any>;
+	children: React.ReactNode;
+	cursor?: boolean;
+	content?: React.ComponentType<unknown>;
 }
 
-export function ChartTooltip({ children, cursor, content: Content }: ChartTooltipProps) {
-  return <>{children}</>;
+export function ChartTooltip({ children }: ChartTooltipProps) {
+	return <>{children}</>;
 }
 
 interface ChartTooltipContentProps {
-  nameKey?: string;
-  hideLabel?: boolean;
-  [key: string]: any;
+	nameKey?: string;
+	hideLabel?: boolean;
+	props?: Record<string, unknown>;
 }
 
-export function ChartTooltipContent({ nameKey, hideLabel, ...props }: ChartTooltipContentProps) {
-  return null;
+export function ChartTooltipContent(_: ChartTooltipContentProps) {
+	return null;
 }
