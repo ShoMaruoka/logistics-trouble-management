@@ -11,6 +11,6 @@ public class StatisticsSummaryDto
 	public int HighCount { get; set; }
 	public int MediumCount { get; set; }
 	public int LowCount { get; set; }
-	public TimeSpan AverageResolutionTime { get; set; }
+	public double AverageResolutionTime { get; set; }
 	public decimal Ppm { get; set; }
 }

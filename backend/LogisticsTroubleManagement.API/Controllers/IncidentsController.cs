@@ -79,12 +79,12 @@ public class IncidentsController : ControllerBase
 
             if (searchDto.FromDate.HasValue)
             {
-                predicates.Add(i => i.ReportedDate >= searchDto.FromDate.Value);
+                predicates.Add(i => i.OccurrenceDate >= searchDto.FromDate.Value);
             }
 
             if (searchDto.ToDate.HasValue)
             {
-                predicates.Add(i => i.ReportedDate <= searchDto.ToDate.Value);
+                predicates.Add(i => i.OccurrenceDate <= searchDto.ToDate.Value);
             }
 
             if (searchDto.IsOverdue.HasValue && searchDto.IsOverdue.Value)
@@ -110,10 +110,11 @@ public class IncidentsController : ControllerBase
                 "priority" => i => i.Priority,
                 "category" => i => i.Category,
                 "reporteddate" => i => i.ReportedDate,
+                "occurrencedate" => i => i.OccurrenceDate,
                 "resolveddate" => i => i.ResolvedDate ?? DateTime.MaxValue,
                 "createdat" => i => i.CreatedAt,
                 "updatedat" => i => i.UpdatedAt,
-                _ => i => i.ReportedDate
+                _ => i => i.OccurrenceDate
             };
 
             // ページネーション実行
@@ -177,11 +178,24 @@ public class IncidentsController : ControllerBase
 
     // POST: api/incidents
     [HttpPost]
-    public async Task<ActionResult<IncidentDto>> CreateIncident(CreateIncidentDto createDto)
+    public async Task<ActionResult<IncidentDto>> CreateIncident([FromBody] CreateIncidentDto createDto)
     {
         try
         {
+            if (createDto == null)
+            {
+                return BadRequest(new { Error = "リクエストボディが空です。" });
+            }
+
             _logger.LogInformation("インシデント作成リクエスト: {@CreateDto}", createDto);
+            _logger.LogInformation("Priority値: {Priority}", createDto.Priority);
+            _logger.LogInformation("Priority型: {PriorityType}", createDto.Priority.GetType().Name);
+
+            // 有効性確認日の前処理（空文字列をnullに変換）
+            if (createDto.EffectivenessDate.HasValue && createDto.EffectivenessDate.Value == DateTime.MinValue)
+            {
+                createDto.EffectivenessDate = null;
+            }
 
             // 報告者の存在確認
             var reportedBy = await _userRepository.GetByIdAsync(createDto.ReportedById);
@@ -201,26 +215,38 @@ public class IncidentsController : ControllerBase
             }
 
             // インシデント作成
-            var incident = Incident.Create(
+            var newIncident = Incident.Create(
                 createDto.Title,
                 createDto.Description,
                 createDto.Category,
                 createDto.ReportedById,
-                createDto.Priority);
+                createDto.TroubleType,
+                createDto.DamageType,
+                createDto.Warehouse,
+                createDto.ShippingCompany,
+                createDto.OccurrenceDate,
+                createDto.Priority,
+                createDto.IncidentDetails,
+                createDto.TotalShipments,
+                createDto.DefectiveItems,
+                createDto.OccurrenceLocation,
+                createDto.Summary,
+                createDto.Cause,
+                createDto.PreventionMeasures);
 
             // 割り当て先が指定されている場合は割り当て
             if (createDto.AssignedToId.HasValue)
             {
-                incident.AssignTo(createDto.AssignedToId.Value);
+                newIncident.AssignTo(createDto.AssignedToId.Value);
             }
 
-            await _incidentRepository.AddAsync(incident);
+            await _incidentRepository.AddAsync(newIncident);
             await _unitOfWork.SaveChangesAsync();
 
-            var incidentDto = await ConvertToDtoAsync(incident);
+            var incidentDto = await ConvertToDtoAsync(newIncident);
 
-            _logger.LogInformation("インシデント作成成功: ID={Id}", incident.Id);
-            return CreatedAtAction(nameof(GetIncident), new { id = incident.Id }, incidentDto);
+            _logger.LogInformation("インシデント作成成功: ID={Id}", newIncident.Id);
+            return CreatedAtAction(nameof(GetIncident), new { id = newIncident.Id }, incidentDto);
         }
         catch (Exception ex)
         {
@@ -257,6 +283,42 @@ public class IncidentsController : ControllerBase
             // インシデント更新
             incident.UpdateDetails(updateDto.Title, updateDto.Description, updateDto.Category);
             incident.UpdatePriority(updateDto.Priority);
+
+            // 物流特化項目の更新
+            if (updateDto.TroubleType.HasValue && updateDto.DamageType.HasValue && 
+                updateDto.Warehouse.HasValue && updateDto.ShippingCompany.HasValue)
+            {
+                incident.UpdateLogisticsDetails(
+                    updateDto.TroubleType.Value,
+                    updateDto.DamageType.Value,
+                    updateDto.Warehouse.Value,
+                    updateDto.ShippingCompany.Value);
+            }
+
+            if (updateDto.EffectivenessStatus.HasValue)
+            {
+                incident.UpdateEffectivenessStatus(updateDto.EffectivenessStatus.Value);
+            }
+
+            // 新規追加項目の更新
+            if (updateDto.IncidentDetails != null || updateDto.TotalShipments.HasValue || 
+                updateDto.DefectiveItems.HasValue || updateDto.OccurrenceDate.HasValue || 
+                updateDto.OccurrenceLocation != null || updateDto.Summary != null || 
+                updateDto.Cause != null || updateDto.PreventionMeasures != null || 
+                updateDto.EffectivenessDate.HasValue || updateDto.EffectivenessComment != null)
+            {
+                incident.UpdateExtendedDetails(
+                    updateDto.IncidentDetails ?? incident.IncidentDetails,
+                    updateDto.TotalShipments ?? incident.TotalShipments,
+                    updateDto.DefectiveItems ?? incident.DefectiveItems,
+                    updateDto.OccurrenceDate ?? incident.OccurrenceDate,
+                    updateDto.OccurrenceLocation ?? incident.OccurrenceLocation,
+                    updateDto.Summary ?? incident.Summary,
+                    updateDto.Cause ?? incident.Cause,
+                    updateDto.PreventionMeasures ?? incident.PreventionMeasures,
+                    updateDto.EffectivenessDate ?? incident.EffectivenessDate,
+                    updateDto.EffectivenessComment ?? incident.EffectivenessComment);
+            }
 
             // ステータス更新
             if (incident.Status != updateDto.Status)
@@ -427,6 +489,21 @@ public class IncidentsController : ControllerBase
             Status = incident.Status,
             Priority = incident.Priority,
             Category = incident.Category,
+            TroubleType = incident.TroubleType,
+            DamageType = incident.DamageType,
+            Warehouse = incident.Warehouse,
+            ShippingCompany = incident.ShippingCompany,
+            EffectivenessStatus = incident.EffectivenessStatus,
+            IncidentDetails = incident.IncidentDetails,
+            TotalShipments = incident.TotalShipments,
+            DefectiveItems = incident.DefectiveItems,
+            OccurrenceDate = incident.OccurrenceDate,
+            OccurrenceLocation = incident.OccurrenceLocation,
+            Summary = incident.Summary,
+            Cause = incident.Cause,
+            PreventionMeasures = incident.PreventionMeasures,
+            EffectivenessDate = incident.EffectivenessDate,
+            EffectivenessComment = incident.EffectivenessComment,
             ReportedById = incident.ReportedById,
             ReportedByName = reportedBy?.GetFullName() ?? "不明",
             AssignedToId = incident.AssignedToId,

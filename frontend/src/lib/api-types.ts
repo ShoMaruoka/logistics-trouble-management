@@ -1,12 +1,42 @@
 // バックエンドAPIの型定義
 
+export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type IncidentStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed';
+
+// 物流特化型定義
+export type TroubleType = 'ProductTrouble' | 'DeliveryTrouble';
+export type DamageType = 'WrongShipment' | 'EarlyOrLateArrival' | 'Lost' | 'WrongDelivery' | 'DamageOrContamination' | 'OtherDeliveryMistake' | 'OtherProductAccident';
+export type Warehouse = 'WarehouseA' | 'WarehouseB' | 'WarehouseC';
+export type ShippingCompany = 'InHouse' | 'Charter' | 'ATransport' | 'BExpress';
+export type EffectivenessStatus = 'NotImplemented' | 'Implemented';
+
 export interface IncidentDto {
   id: number;
   title: string;
   description: string;
-  status: 'Open' | 'InProgress' | 'Resolved' | 'Closed';
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: IncidentStatus;
+  priority: Priority;
   category: string;
+  
+  // 物流特化項目
+  troubleType: TroubleType;
+  damageType: DamageType;
+  warehouse: Warehouse;
+  shippingCompany: ShippingCompany;
+  effectivenessStatus: EffectivenessStatus;
+  
+  // 新規追加項目（提供サイト対応）
+  incidentDetails: string; // 発生経緯
+  totalShipments: number; // 出荷総数
+  defectiveItems: number; // 不良品数
+  occurrenceDate: string; // 発生日
+  occurrenceLocation: string; // 発生場所
+  summary: string; // 概要
+  cause: string; // 原因
+  preventionMeasures: string; // 再発防止策
+  effectivenessDate?: string | null; // 有効性確認日
+  effectivenessComment: string; // 有効性確認コメント
+  
   reportedById: number;
   reportedByName: string;
   assignedToId?: number;
@@ -25,7 +55,27 @@ export interface CreateIncidentDto {
   title: string;
   description: string;
   category: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  priority: Priority;
+  
+  // 物流特化項目
+  troubleType: TroubleType;
+  damageType: DamageType;
+  warehouse: Warehouse;
+  shippingCompany: ShippingCompany;
+  
+  // 新規追加項目（提供サイト対応）
+  incidentDetails: string; // 発生経緯
+  totalShipments: number; // 出荷総数
+  defectiveItems: number; // 不良品数
+  occurrenceDate: string; // 発生日
+  occurrenceLocation: string; // 発生場所
+  summary: string; // 概要
+  cause: string; // 原因
+  preventionMeasures: string; // 再発防止策
+  effectivenessStatus: EffectivenessStatus; // 有効性評価
+  effectivenessDate?: string | null; // 有効性確認日
+  effectivenessComment: string; // 有効性確認コメント
+  
   reportedById: number;
 }
 
@@ -33,20 +83,41 @@ export interface UpdateIncidentDto {
   title?: string;
   description?: string;
   category?: string;
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  priority?: Priority;
+  
+  // 物流特化項目
+  troubleType?: TroubleType;
+  damageType?: DamageType;
+  warehouse?: Warehouse;
+  shippingCompany?: ShippingCompany;
+  effectivenessStatus?: EffectivenessStatus;
+  
+  // 新規追加項目（提供サイト対応）
+  incidentDetails?: string; // 発生経緯
+  totalShipments?: number; // 出荷総数
+  defectiveItems?: number; // 不良品数
+  occurrenceDate?: string; // 発生日
+  occurrenceLocation?: string; // 発生場所
+  summary?: string; // 概要
+  cause?: string; // 原因
+  preventionMeasures?: string; // 再発防止策
+  effectivenessDate?: string | null; // 有効性確認日
+  effectivenessComment?: string; // 有効性確認コメント
+  
   assignedToId?: number;
   resolution?: string;
 }
 
 export interface IncidentSearchDto {
-  title?: string;
-  status?: 'Open' | 'InProgress' | 'Resolved' | 'Closed';
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  searchTerm?: string;
+  status?: IncidentStatus;
+  priority?: Priority;
   category?: string;
   reportedById?: number;
   assignedToId?: number;
-  reportedFrom?: string;
-  reportedTo?: string;
+  fromDate?: string;
+  toDate?: string;
+  isOverdue?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: string;
@@ -65,12 +136,16 @@ export interface PagedResultDto<T> {
 
 export interface StatisticsSummaryDto {
   totalIncidents: number;
-  openIncidents: number;
-  resolvedIncidents: number;
-  averageResolutionTime: number;
-  incidentsByPriority: Record<string, number>;
-  incidentsByStatus: Record<string, number>;
-  recentIncidents: IncidentDto[];
+  openCount: number;
+  inProgressCount: number;
+  resolvedCount: number;
+  closedCount: number;
+  criticalCount: number;
+  highCount: number;
+  mediumCount: number;
+  lowCount: number;
+  averageResolutionTime: string; // TimeSpan is serialized as string
+  ppm: number;
 }
 
 export interface ChartDataDto {

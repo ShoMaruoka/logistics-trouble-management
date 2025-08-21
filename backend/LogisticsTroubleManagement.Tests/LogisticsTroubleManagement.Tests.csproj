@@ -10,10 +10,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="xunit" Version="2.5.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="xunit" Version="2.6.6" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.0" />
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+    <PackageReference Include="Moq" Version="4.20.70" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LogisticsTroubleManagement.Domain\LogisticsTroubleManagement.Domain.csproj" />
+    <ProjectReference Include="..\LogisticsTroubleManagement.Core\LogisticsTroubleManagement.Core.csproj" />
+    <ProjectReference Include="..\LogisticsTroubleManagement.Infrastructure\LogisticsTroubleManagement.Infrastructure.csproj" />
     <ProjectReference Include="..\LogisticsTroubleManagement.API\LogisticsTroubleManagement.API.csproj" />
   </ItemGroup>
 

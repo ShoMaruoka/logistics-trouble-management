@@ -13,3 +13,14 @@
 /backend/LogisticsTroubleManagement.Tests/obj
 /backend/logs
 /backend/LogisticsTroubleManagement.API/logs
+.env.local
+.playwright-mcp/current-incident-form.png
+.playwright-mcp/dashboard-with-graphs.png
+.playwright-mcp/dashboard-working.png
+.playwright-mcp/incident-form-working.png
+.playwright-mcp/logistics-form-dropdown-fixed.png
+.playwright-mcp/logistics-form-dropdown-overlap-fixed.png
+.playwright-mcp/logistics-form-vertical-layout-fixed.png
+.playwright-mcp/logistics-form-wide-layout-fixed.png
+.playwright-mcp/logistics-form-wide-layout.png
+.playwright-mcp/logistics-trouble-list-updated.png

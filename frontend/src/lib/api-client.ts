@@ -46,6 +46,11 @@ class ApiClient {
 
 				const parsed = (errorData ?? {}) as Partial<{ message: string; code: string; errors?: Record<string, string[]> }>;
 
+				console.error('APIエラー詳細:', {
+					status: response.status,
+					statusText: response.statusText,
+					errorData: parsed
+				});
 				throw new ApiError(
 					response.status,
 					parsed.message || 'API request failed',
@@ -121,6 +126,7 @@ class ApiClient {
 	}
 
 	async createIncident(data: CreateIncidentDto): Promise<IncidentDto> {
+		console.log('送信データ:', JSON.stringify(data, null, 2));
 		return this.request<IncidentDto>('/api/incidents', {
 			method: 'POST',
 			body: JSON.stringify(data),
@@ -141,40 +147,52 @@ class ApiClient {
 	}
 
 	// 統計関連API
-	async getStatisticsSummary(year?: number): Promise<StatisticsSummaryDto> {
+	async getStatisticsSummary(year?: number, month?: number): Promise<StatisticsSummaryDto> {
 		const params = new URLSearchParams();
 		if (year) {
 			params.append('year', year.toString());
+		}
+		if (month) {
+			params.append('month', month.toString());
 		}
 		const queryString = params.toString();
 		const endpoint = `/api/statistics/summary${queryString ? `?${queryString}` : ''}`;
 		return this.request<StatisticsSummaryDto>(endpoint);
 	}
 
-	async getDamageTypesChart(year?: number): Promise<PieChartDataDto> {
+	async getDamageTypesChart(year?: number, month?: number): Promise<PieChartDataDto> {
 		const params = new URLSearchParams();
 		if (year) {
 			params.append('year', year.toString());
+		}
+		if (month) {
+			params.append('month', month.toString());
 		}
 		const queryString = params.toString();
 		const endpoint = `/api/statistics/charts/damage-types${queryString ? `?${queryString}` : ''}`;
 		return this.request<PieChartDataDto>(endpoint);
 	}
 
-	async getTroubleTypesChart(year?: number): Promise<PieChartDataDto> {
+	async getTroubleTypesChart(year?: number, month?: number): Promise<PieChartDataDto> {
 		const params = new URLSearchParams();
 		if (year) {
 			params.append('year', year.toString());
+		}
+		if (month) {
+			params.append('month', month.toString());
 		}
 		const queryString = params.toString();
 		const endpoint = `/api/statistics/charts/trouble-types${queryString ? `?${queryString}` : ''}`;
 		return this.request<PieChartDataDto>(endpoint);
 	}
 
-	async getMonthlyIncidentsChart(year?: number): Promise<ChartDataDto> {
+	async getMonthlyIncidentsChart(year?: number, month?: number): Promise<ChartDataDto> {
 		const params = new URLSearchParams();
 		if (year) {
 			params.append('year', year.toString());
+		}
+		if (month) {
+			params.append('month', month.toString());
 		}
 		const queryString = params.toString();
 		const endpoint = `/api/statistics/charts/monthly-incidents${queryString ? `?${queryString}` : ''}`;

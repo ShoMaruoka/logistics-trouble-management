@@ -211,12 +211,47 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Cause")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<int>("DamageType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DefectiveItems")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EffectivenessComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EffectivenessDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EffectivenessStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IncidentDetails")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("OccurrenceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OccurrenceLocation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreventionMeasures")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -237,18 +272,34 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.Property<DateTime?>("ResolvedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ShippingCompany")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("TotalShipments")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TroubleType")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("Warehouse")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

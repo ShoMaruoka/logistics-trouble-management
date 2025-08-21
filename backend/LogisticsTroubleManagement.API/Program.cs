@@ -24,6 +24,13 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidationFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.JsonSerializerOptions.WriteIndented = true;
+    options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -63,7 +70,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(CreateIncidentDtoValidator).As
 // Use custom validation response instead of automatic 400
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+    options.SuppressModelStateInvalidFilter = false;
 });
 
 // Add CORS
@@ -152,3 +159,6 @@ catch (Exception ex)
 }
 
 app.Run();
+
+// Make Program class public for testing
+public partial class Program { }

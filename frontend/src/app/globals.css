@@ -45,13 +45,13 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.98 0 0); /* より明るい背景色 */
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.55 0.15 240); /* 物流システム用の青 */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -63,14 +63,28 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  
+  /* 物流トラブル管理システム専用カラー */
+  --logistics-blue: oklch(0.55 0.15 240); /* メインの青 */
+  --logistics-red: oklch(0.65 0.25 25); /* 商品トラブル用の赤 */
+  --logistics-orange: oklch(0.75 0.2 45); /* 配送トラブル用のオレンジ */
+  --logistics-green: oklch(0.65 0.2 140); /* 成功・完了用の緑 */
+  --logistics-yellow: oklch(0.85 0.15 85); /* 警告用の黄 */
+  --logistics-teal: oklch(0.65 0.15 180); /* その他の配送ミス用のティール */
+  --logistics-purple: oklch(0.65 0.15 280); /* その他の商品事故用の紫 */
+  
+  /* 円グラフ用カラー */
+  --chart-1: oklch(0.65 0.25 25); /* 破損・汚損 (red-orange) */
+  --chart-2: oklch(0.65 0.15 180); /* その他の配送ミス (dark teal) */
+  --chart-3: oklch(0.55 0.15 240); /* 誤出荷 (dark blue) */
+  --chart-4: oklch(0.75 0.2 45); /* 早着・延着 (light orange) */
+  --chart-5: oklch(0.85 0.15 85); /* 紛失 (yellow) */
+  --chart-6: oklch(0.65 0.2 140); /* 誤配送 (green) */
+  --chart-7: oklch(0.65 0.15 280); /* その他の商品事故 (light green) */
+  
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.55 0.15 240);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
@@ -85,8 +99,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.55 0.15 240);
+  --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -97,14 +111,27 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  
+  /* ダークモード用物流カラー */
+  --logistics-blue: oklch(0.65 0.15 240);
+  --logistics-red: oklch(0.75 0.25 25);
+  --logistics-orange: oklch(0.85 0.2 45);
+  --logistics-green: oklch(0.75 0.2 140);
+  --logistics-yellow: oklch(0.95 0.15 85);
+  --logistics-teal: oklch(0.75 0.15 180);
+  --logistics-purple: oklch(0.75 0.15 280);
+  
+  --chart-1: oklch(0.75 0.25 25);
+  --chart-2: oklch(0.75 0.15 180);
+  --chart-3: oklch(0.65 0.15 240);
+  --chart-4: oklch(0.85 0.2 45);
+  --chart-5: oklch(0.95 0.15 85);
+  --chart-6: oklch(0.75 0.2 140);
+  --chart-7: oklch(0.75 0.15 280);
+  
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.65 0.15 240);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -118,5 +145,97 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* 物流トラブル管理システム専用ユーティリティクラス */
+@layer utilities {
+  .text-logistics-blue {
+    color: var(--logistics-blue);
+  }
+  .text-logistics-red {
+    color: var(--logistics-red);
+  }
+  .text-logistics-orange {
+    color: var(--logistics-orange);
+  }
+  .text-logistics-green {
+    color: var(--logistics-green);
+  }
+  .text-logistics-yellow {
+    color: var(--logistics-yellow);
+  }
+  .text-logistics-teal {
+    color: var(--logistics-teal);
+  }
+  .text-logistics-purple {
+    color: var(--logistics-purple);
+  }
+  
+  .bg-logistics-blue {
+    background-color: var(--logistics-blue);
+  }
+  .bg-logistics-red {
+    background-color: var(--logistics-red);
+  }
+  .bg-logistics-orange {
+    background-color: var(--logistics-orange);
+  }
+  .bg-logistics-green {
+    background-color: var(--logistics-green);
+  }
+  .bg-logistics-yellow {
+    background-color: var(--logistics-yellow);
+  }
+  .bg-logistics-teal {
+    background-color: var(--logistics-teal);
+  }
+  .bg-logistics-purple {
+    background-color: var(--logistics-purple);
+  }
+  
+  .border-logistics-blue {
+    border-color: var(--logistics-blue);
+  }
+  .border-logistics-red {
+    border-color: var(--logistics-red);
+  }
+  .border-logistics-orange {
+    border-color: var(--logistics-orange);
+  }
+  .border-logistics-green {
+    border-color: var(--logistics-green);
+  }
+  .border-logistics-yellow {
+    border-color: var(--logistics-yellow);
+  }
+  .border-logistics-teal {
+    border-color: var(--logistics-teal);
+  }
+  .border-logistics-purple {
+    border-color: var(--logistics-purple);
+  }
+}
+
+/* タブの選択状態のスタイル */
+@layer components {
+  [data-slot="tabs-trigger"][data-state="active"] {
+    background-color: var(--logistics-blue) !important;
+    color: white !important;
+  }
+  
+  [data-slot="tabs-trigger"][data-state="active"]:hover {
+    background-color: var(--logistics-blue) !important;
+    color: white !important;
+  }
+  
+  .dark [data-slot="tabs-trigger"][data-state="active"] {
+    background-color: var(--logistics-blue) !important;
+    color: white !important;
+  }
+  
+  .dark [data-slot="tabs-trigger"][data-state="active"]:hover {
+    background-color: var(--logistics-blue) !important;
+    color: white !important;
   }
 }

@@ -150,7 +150,7 @@ export function useDeleteIncident() {
 }
 
 // 統計関連Hooks
-export function useStatisticsSummary(year?: number) {
+export function useStatisticsSummary(year?: number, month?: number) {
 	const [state, setState] = useState<ApiState<StatisticsSummaryDto>>({
 		data: null,
 		loading: true,
@@ -160,13 +160,13 @@ export function useStatisticsSummary(year?: number) {
 	const fetchSummary = useCallback(async () => {
 		try {
 			setState(prev => ({ ...prev, loading: true, error: null }));
-			const data = await apiClient.getStatisticsSummary(year);
+			const data = await apiClient.getStatisticsSummary(year, month);
 			setState({ data, loading: false, error: null });
 		} catch (error) {
 			const message = error instanceof ApiError ? error.message : '統計情報の取得に失敗しました';
 			setState({ data: null, loading: false, error: message });
 		}
-	}, [year]);
+	}, [year, month]);
 
 	useEffect(() => {
 		fetchSummary();
@@ -175,7 +175,7 @@ export function useStatisticsSummary(year?: number) {
 	return { ...state, refetch: fetchSummary };
 }
 
-export function useDamageTypesChart(year?: number) {
+export function useDamageTypesChart(year?: number, month?: number) {
 	const [state, setState] = useState<ApiState<PieChartDataDto>>({
 		data: null,
 		loading: true,
@@ -185,13 +185,13 @@ export function useDamageTypesChart(year?: number) {
 	const fetchChart = useCallback(async () => {
 		try {
 			setState(prev => ({ ...prev, loading: true, error: null }));
-			const data = await apiClient.getDamageTypesChart(year); // Pass year here
+			const data = await apiClient.getDamageTypesChart(year, month);
 			setState({ data, loading: false, error: null });
 		} catch (error) {
 			const message = error instanceof ApiError ? error.message : '損傷種類チャートの取得に失敗しました';
 			setState({ data: null, loading: false, error: message });
 		}
-	}, [year]); // Added year to dependency array
+	}, [year, month]);
 
 	useEffect(() => {
 		fetchChart();
@@ -200,7 +200,7 @@ export function useDamageTypesChart(year?: number) {
 	return { ...state, refetch: fetchChart };
 }
 
-export function useTroubleTypesChart(year?: number) {
+export function useTroubleTypesChart(year?: number, month?: number) {
 	const [state, setState] = useState<ApiState<PieChartDataDto>>({
 		data: null,
 		loading: true,
@@ -210,13 +210,13 @@ export function useTroubleTypesChart(year?: number) {
 	const fetchChart = useCallback(async () => {
 		try {
 			setState(prev => ({ ...prev, loading: true, error: null }));
-			const data = await apiClient.getTroubleTypesChart(year); // Pass year here
+			const data = await apiClient.getTroubleTypesChart(year, month);
 			setState({ data, loading: false, error: null });
 		} catch (error) {
 			const message = error instanceof ApiError ? error.message : 'トラブル種類チャートの取得に失敗しました';
 			setState({ data: null, loading: false, error: message });
 		}
-	}, [year]); // Added year to dependency array
+	}, [year, month]);
 
 	useEffect(() => {
 		fetchChart();
@@ -225,7 +225,7 @@ export function useTroubleTypesChart(year?: number) {
 	return { ...state, refetch: fetchChart };
 }
 
-export function useMonthlyIncidentsChart(year?: number) {
+export function useMonthlyIncidentsChart(year?: number, month?: number) {
 	const [state, setState] = useState<ApiState<ChartDataDto>>({
 		data: null,
 		loading: true,
@@ -235,13 +235,13 @@ export function useMonthlyIncidentsChart(year?: number) {
 	const fetchChart = useCallback(async () => {
 		try {
 			setState(prev => ({ ...prev, loading: true, error: null }));
-			const data = await apiClient.getMonthlyIncidentsChart(year); // Pass year here
+			const data = await apiClient.getMonthlyIncidentsChart(year, month);
 			setState({ data, loading: false, error: null });
 		} catch (error) {
 			const message = error instanceof ApiError ? error.message : '月間インシデントチャートの取得に失敗しました';
 			setState({ data: null, loading: false, error: message });
 		}
-	}, [year]); // Added year to dependency array
+	}, [year, month]);
 
 	useEffect(() => {
 		fetchChart();

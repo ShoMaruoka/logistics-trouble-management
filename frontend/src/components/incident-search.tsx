@@ -36,8 +36,8 @@ export function IncidentSearch({ searchParams, onSearchChange, onClear }: Incide
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="タイトルで検索..."
-            value={searchParams.title || ''}
-            onChange={(e) => handleInputChange('title', e.target.value)}
+            value={searchParams.searchTerm || ''}
+            onChange={(e) => handleInputChange('searchTerm', e.target.value)}
             className="pl-10"
           />
         </div>
@@ -49,7 +49,7 @@ export function IncidentSearch({ searchParams, onSearchChange, onClear }: Incide
           <Filter className="h-4 w-4" />
           詳細検索
         </Button>
-        {(searchParams.title || searchParams.status || searchParams.priority || searchParams.category) && (
+        {(searchParams.searchTerm || searchParams.status || searchParams.priority || searchParams.category) && (
           <Button
             variant="outline"
             onClick={handleClear}
@@ -117,8 +117,8 @@ export function IncidentSearch({ searchParams, onSearchChange, onClear }: Incide
             <Input
               id="reported-from"
               type="date"
-              value={searchParams.reportedFrom || ''}
-              onChange={(e) => handleInputChange('reportedFrom', e.target.value)}
+              value={searchParams.fromDate || ''}
+              onChange={(e) => handleInputChange('fromDate', e.target.value)}
             />
           </div>
         </div>

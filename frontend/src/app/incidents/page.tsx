@@ -9,6 +9,8 @@ import { IncidentSearch } from "@/components/incident-search";
 import { Pagination } from "@/components/pagination";
 import { IncidentDetail } from "@/components/incident-detail";
 import { IncidentForm } from "@/components/incident-form";
+import { FilterControls } from "@/components/filter-controls";
+import { useFilter } from "@/contexts/FilterContext";
 import { 
   useIncidents, 
   useCreateIncident, 
@@ -23,11 +25,14 @@ import type {
 } from "@/lib/api-types";
 
 export default function IncidentsPage() {
+  // 共通フィルタ状態
+  const { selectedYear, selectedMonth } = useFilter();
+  
   // 状態管理
   const [searchParams, setSearchParams] = React.useState<IncidentSearchDto>({
     page: 1,
     pageSize: 10,
-    sortBy: 'reportedDate',
+    sortBy: 'occurrenceDate',
     ascending: false,
   });
   
@@ -35,7 +40,7 @@ export default function IncidentsPage() {
     key: keyof IncidentDto;
     direction: 'ascending' | 'descending';
   } | null>({
-    key: 'reportedDate',
+    key: 'occurrenceDate',
     direction: 'descending',
   });
 
@@ -70,14 +75,44 @@ export default function IncidentsPage() {
     setSearchParams({
       page: 1,
       pageSize: 10,
-      sortBy: 'reportedDate',
+      sortBy: 'occurrenceDate',
       ascending: false,
     });
     setSortConfig({
-      key: 'reportedDate',
+      key: 'occurrenceDate',
       direction: 'descending',
     });
   };
+
+  // フィルタ状態に応じた検索パラメータの更新
+  React.useEffect(() => {
+    const newSearchParams: IncidentSearchDto = {
+      ...searchParams,
+      page: 1, // フィルタ変更時は1ページ目に戻す
+    };
+
+    // 年度・月フィルタの適用
+    if (selectedYear > 0) {
+      const startDate = new Date(selectedYear, 0, 1); // 1月1日
+      const endDate = new Date(selectedYear, 11, 31); // 12月31日
+      
+      if (selectedMonth > 0) {
+        // 月間表示の場合
+        startDate.setMonth(selectedMonth - 1);
+        endDate.setMonth(selectedMonth - 1);
+        endDate.setDate(new Date(selectedYear, selectedMonth, 0).getDate()); // 月末日
+      }
+      
+      newSearchParams.fromDate = startDate.toISOString().split('T')[0];
+      newSearchParams.toDate = endDate.toISOString().split('T')[0];
+    } else {
+      // フィルタをクリア
+      newSearchParams.fromDate = undefined;
+      newSearchParams.toDate = undefined;
+    }
+
+    setSearchParams(newSearchParams);
+  }, [selectedYear, selectedMonth]);
 
   // ページネーション処理
   const handlePageChange = (page: number) => {
@@ -156,6 +191,9 @@ export default function IncidentsPage() {
           新規インシデント
         </Button>
       </div>
+
+      {/* 年度・月フィルタ */}
+      <FilterControls />
 
       {/* 検索・フィルタリング */}
       <IncidentSearch

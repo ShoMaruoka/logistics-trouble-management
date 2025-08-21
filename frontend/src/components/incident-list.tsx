@@ -25,40 +25,95 @@ export function IncidentList({
     return sortConfig.direction === 'ascending' ? "↑" : "↓";
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Open':
-        return 'bg-blue-100 text-blue-800';
-      case 'InProgress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Resolved':
-        return 'bg-green-100 text-green-800';
-      case 'Closed':
-        return 'bg-gray-100 text-gray-800';
+  // 物流特化フィールドの日本語表示用ヘルパー関数
+  const getTroubleTypeLabel = (troubleType: string) => {
+    switch (troubleType) {
+      case 'ProductTrouble':
+        return '商品トラブル';
+      case 'DeliveryTrouble':
+        return '配送トラブル';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return troubleType;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'Critical':
-        return 'bg-red-100 text-red-800';
-      case 'High':
-        return 'bg-orange-100 text-orange-800';
-      case 'Medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Low':
-        return 'bg-green-100 text-green-800';
+  const getDamageTypeLabel = (damageType: string) => {
+    switch (damageType) {
+      case 'WrongShipment':
+        return '誤出荷';
+      case 'EarlyOrLateArrival':
+        return '早着・延着';
+      case 'Lost':
+        return '紛失';
+      case 'WrongDelivery':
+        return '誤配送';
+      case 'DamageOrContamination':
+        return '破損・汚損';
+      case 'OtherDeliveryMistake':
+        return 'その他の配送ミス';
+      case 'OtherProductAccident':
+        return 'その他の商品事故';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return damageType;
     }
+  };
+
+  const getWarehouseLabel = (warehouse: string) => {
+    switch (warehouse) {
+      case 'WarehouseA':
+        return 'A倉庫';
+      case 'WarehouseB':
+        return 'B倉庫';
+      case 'WarehouseC':
+        return 'C倉庫';
+      default:
+        return warehouse;
+    }
+  };
+
+  const getShippingCompanyLabel = (shippingCompany: string) => {
+    switch (shippingCompany) {
+      case 'InHouse':
+        return '庫内';
+      case 'Charter':
+        return 'チャーター';
+      case 'ATransport':
+        return 'A運輸';
+      case 'BExpress':
+        return 'B急便';
+      default:
+        return shippingCompany;
+    }
+  };
+
+  const getEffectivenessStatusLabel = (effectivenessStatus: string) => {
+    switch (effectivenessStatus) {
+      case 'NotImplemented':
+        return '未実施';
+      case 'Implemented':
+        return '実施';
+      default:
+        return effectivenessStatus;
+    }
+  };
+
+  const getEffectivenessStatusBadge = (effectivenessStatus: string) => {
+    const isImplemented = effectivenessStatus === 'Implemented';
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+        isImplemented 
+          ? 'bg-logistics-green text-white' 
+          : 'bg-gray-100 text-gray-800'
+      }`}>
+        {getEffectivenessStatusLabel(effectivenessStatus)}
+      </span>
+    );
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-logistics-blue"></div>
         <span className="ml-2">読み込み中...</span>
       </div>
     );
@@ -67,7 +122,7 @@ export function IncidentList({
   if (incidents.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        インシデントが見つかりません
+        物流トラブルが見つかりません
       </div>
     );
   }
@@ -79,53 +134,53 @@ export function IncidentList({
           <tr className="bg-gray-50">
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('reportedDate')}
-                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded"
+                onClick={() => requestSort('occurrenceDate')}
+                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                報告日 {getSortIcon('reportedDate')}
+                日付 {getSortIcon('occurrenceDate')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('title')}
-                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded"
+                onClick={() => requestSort('troubleType')}
+                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                タイトル {getSortIcon('title')}
+                トラブル種類 {getSortIcon('troubleType')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('category')}
-                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded"
+                onClick={() => requestSort('damageType')}
+                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                カテゴリ {getSortIcon('category')}
+                損傷の種類 {getSortIcon('damageType')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('priority')}
-                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded"
+                onClick={() => requestSort('warehouse')}
+                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                優先度 {getSortIcon('priority')}
+                出荷元倉庫 {getSortIcon('warehouse')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('status')}
-                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded"
+                onClick={() => requestSort('shippingCompany')}
+                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                ステータス {getSortIcon('status')}
+                運送会社名 {getSortIcon('shippingCompany')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('reportedByName')}
-                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded"
+                onClick={() => requestSort('effectivenessStatus')}
+                className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                報告者 {getSortIcon('reportedByName')}
+                有効性確認 {getSortIcon('effectivenessStatus')}
               </button>
             </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">アクション</th>
+            <th className="border border-gray-300 px-4 py-2 text-left font-medium">アクション</th>
           </tr>
         </thead>
         <tbody>
@@ -136,25 +191,29 @@ export function IncidentList({
               onClick={() => onEdit(incident)}
             >
               <td className="border border-gray-300 px-4 py-2">
-                {new Date(incident.reportedDate).toLocaleDateString('ja-JP')}
+                {new Date(incident.occurrenceDate).toLocaleDateString('ja-JP')}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                <div className="max-w-xs truncate" title={incident.title}>
-                  {incident.title}
-                </div>
-              </td>
-              <td className="border border-gray-300 px-4 py-2">{incident.category}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(incident.priority)}`}>
-                  {incident.priority}
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  incident.troubleType === 'ProductTrouble' 
+                    ? 'bg-logistics-red text-white' 
+                    : 'bg-logistics-orange text-white'
+                }`}>
+                  {getTroubleTypeLabel(incident.troubleType)}
                 </span>
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(incident.status)}`}>
-                  {incident.status}
-                </span>
+                {getDamageTypeLabel(incident.damageType)}
               </td>
-              <td className="border border-gray-300 px-4 py-2">{incident.reportedByName}</td>
+              <td className="border border-gray-300 px-4 py-2">
+                {getWarehouseLabel(incident.warehouse)}
+              </td>
+              <td className="border border-gray-300 px-4 py-2">
+                {getShippingCompanyLabel(incident.shippingCompany)}
+              </td>
+              <td className="border border-gray-300 px-4 py-2">
+                {getEffectivenessStatusBadge(incident.effectivenessStatus)}
+              </td>
               <td className="border border-gray-300 px-4 py-2">
                 <div className="flex gap-2">
                   <Button

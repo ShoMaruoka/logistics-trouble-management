@@ -101,6 +101,11 @@ public class DatabaseSeeder
 				"配送車両A-001がエンジンオイル漏れのため、緊急点検が必要です。",
 				"車両故障",
 				users[3].Id, // user1
+				TroubleType.DeliveryTrouble,
+				DamageType.OtherDeliveryMistake,
+				Warehouse.WarehouseA,
+				ShippingCompany.ATransport,
+				new DateTime(2025, 8, 15), // 発生日
 				Priority.High
 			),
 			Incident.Create(
@@ -108,6 +113,11 @@ public class DatabaseSeeder
 				"冷蔵倉庫の温度が設定値より2度高い状態が続いています。",
 				"設備故障",
 				users[4].Id, // user2
+				TroubleType.ProductTrouble,
+				DamageType.OtherProductAccident,
+				Warehouse.WarehouseB,
+				ShippingCompany.InHouse,
+				new DateTime(2025, 8, 16), // 発生日
 				Priority.Critical
 			),
 			Incident.Create(
@@ -115,6 +125,11 @@ public class DatabaseSeeder
 				"関東地区の配送が台風の影響で1日遅延する見込みです。",
 				"配送遅延",
 				users[5].Id, // user3
+				TroubleType.DeliveryTrouble,
+				DamageType.EarlyOrLateArrival,
+				Warehouse.WarehouseB,
+				ShippingCompany.Charter,
+				new DateTime(2025, 8, 17), // 発生日
 				Priority.Medium
 			),
 			Incident.Create(
@@ -122,6 +137,11 @@ public class DatabaseSeeder
 				"精密機器の荷物が輸送中に破損しました。",
 				"荷物破損",
 				users[3].Id, // user1
+				TroubleType.ProductTrouble,
+				DamageType.DamageOrContamination,
+				Warehouse.WarehouseA,
+				ShippingCompany.BExpress,
+				new DateTime(2025, 8, 18), // 発生日
 				Priority.High
 			),
 			Incident.Create(
@@ -129,6 +149,11 @@ public class DatabaseSeeder
 				"複数のユーザーからログインできないとの報告があります。",
 				"システム障害",
 				users[4].Id, // user2
+				TroubleType.ProductTrouble,
+				DamageType.OtherProductAccident,
+				Warehouse.WarehouseC,
+				ShippingCompany.ATransport,
+				new DateTime(2025, 8, 19), // 発生日
 				Priority.Critical
 			)
 		};
