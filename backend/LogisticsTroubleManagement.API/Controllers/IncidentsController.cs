@@ -197,6 +197,16 @@ public class IncidentsController : ControllerBase
                 createDto.EffectivenessDate = null;
             }
 
+            // 原因と再発防止策の前処理（空文字列をnullに変換）
+            if (string.IsNullOrWhiteSpace(createDto.Cause))
+            {
+                createDto.Cause = null;
+            }
+            if (string.IsNullOrWhiteSpace(createDto.PreventionMeasures))
+            {
+                createDto.PreventionMeasures = null;
+            }
+
             // 報告者の存在確認
             var reportedBy = await _userRepository.GetByIdAsync(createDto.ReportedById);
             if (reportedBy == null)

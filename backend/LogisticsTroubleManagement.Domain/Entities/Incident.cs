@@ -24,8 +24,8 @@ public class Incident : BaseEntity
     public DateTime OccurrenceDate { get; private set; } // 発生日
     public string OccurrenceLocation { get; private set; } = string.Empty; // 発生場所
     public string Summary { get; private set; } = string.Empty; // 概要
-    public string Cause { get; private set; } = string.Empty; // 原因
-    public string PreventionMeasures { get; private set; } = string.Empty; // 再発防止策
+    public string? Cause { get; private set; } // 原因
+    public string? PreventionMeasures { get; private set; } // 再発防止策
     public DateTime? EffectivenessDate { get; private set; } // 有効性確認日
     public string EffectivenessComment { get; private set; } = string.Empty; // 有効性確認コメント
     

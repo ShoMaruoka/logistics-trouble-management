@@ -15,8 +15,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                 name: "Cause",
                 table: "Incidents",
                 type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "DefectiveItems",
@@ -62,8 +61,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                 name: "PreventionMeasures",
                 table: "Incidents",
                 type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "Summary",

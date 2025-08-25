@@ -140,6 +140,32 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">1. 発生経緯・トラブル詳細</h3>
             
+            {/* タイトル */}
+            <div className="space-y-3 mb-6">
+              <Label htmlFor="title" className="text-sm font-medium text-gray-700">タイトル *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="トラブルのタイトルを入力してください..."
+                required
+                className="border-gray-300 focus:ring-2 focus:ring-logistics-blue"
+              />
+            </div>
+            
+            {/* 詳細説明 */}
+            <div className="space-y-3 mb-6">
+              <Label htmlFor="description" className="text-sm font-medium text-gray-700">詳細説明 *</Label>
+              <textarea
+                id="description"
+                className="w-full min-h-[80px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-logistics-blue focus:border-transparent"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="トラブルの詳細な説明を入力してください..."
+                required
+              />
+            </div>
+            
             {/* 発生経緯 */}
             <div className="space-y-3 mb-6">
               <Label htmlFor="incidentDetails" className="text-sm font-medium text-gray-700">発生経緯 *</Label>
