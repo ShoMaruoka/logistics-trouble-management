@@ -6,17 +6,22 @@ namespace LogisticsTroubleManagement.Domain.Enums;
 public enum Warehouse
 {
     /// <summary>
+    /// 該当なし
+    /// </summary>
+    None,
+
+    /// <summary>
     /// A倉庫
     /// </summary>
-    WarehouseA = 1,
+    WarehouseA,
 
     /// <summary>
     /// B倉庫
     /// </summary>
-    WarehouseB = 2,
+    WarehouseB,
 
     /// <summary>
     /// C倉庫
     /// </summary>
-    WarehouseC = 3
+    WarehouseC
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LogisticsTroubleManagement.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddExtendedFieldsToIncident : Migration
+    public partial class CreateDatabaseSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,7 +48,8 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                 name: "OccurrenceDate",
                 table: "Incidents",
                 type: "datetime2",
-                nullable: true);
+                nullable: false,
+                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
 
             migrationBuilder.AddColumn<string>(
                 name: "OccurrenceLocation",

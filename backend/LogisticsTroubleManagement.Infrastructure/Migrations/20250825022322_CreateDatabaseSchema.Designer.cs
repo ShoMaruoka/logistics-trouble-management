@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LogisticsTroubleManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250820052925_AddExtendedFieldsToIncident")]
-    partial class AddExtendedFieldsToIncident
+    [Migration("20250825022322_CreateDatabaseSchema")]
+    partial class CreateDatabaseSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -215,7 +215,6 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Cause")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -247,7 +246,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("OccurrenceDate")
+                    b.Property<DateTime>("OccurrenceDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("OccurrenceLocation")
@@ -255,7 +254,6 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PreventionMeasures")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Priority")

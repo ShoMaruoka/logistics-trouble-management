@@ -6,37 +6,42 @@ namespace LogisticsTroubleManagement.Domain.Enums;
 public enum DamageType
 {
     /// <summary>
+    /// 該当なし
+    /// </summary>
+    None,
+
+    /// <summary>
     /// 誤出荷
     /// </summary>
-    WrongShipment = 1,
+    WrongShipment,
 
     /// <summary>
     /// 早着・延着
     /// </summary>
-    EarlyOrLateArrival = 2,
+    EarlyOrLateArrival,
 
     /// <summary>
     /// 紛失
     /// </summary>
-    Lost = 3,
+    Lost,
 
     /// <summary>
     /// 誤配送
     /// </summary>
-    WrongDelivery = 4,
+    WrongDelivery,
 
     /// <summary>
     /// 破損・汚損
     /// </summary>
-    DamageOrContamination = 5,
+    DamageOrContamination,
 
     /// <summary>
     /// その他の配送ミス
     /// </summary>
-    OtherDeliveryMistake = 6,
+    OtherDeliveryMistake,
 
     /// <summary>
     /// その他の商品事故
     /// </summary>
-    OtherProductAccident = 7
+    OtherProductAccident
 }

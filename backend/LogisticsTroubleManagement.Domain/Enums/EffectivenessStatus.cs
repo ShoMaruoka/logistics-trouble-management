@@ -8,10 +8,10 @@ public enum EffectivenessStatus
     /// <summary>
     /// 未実施
     /// </summary>
-    NotImplemented = 0,
+    NotImplemented,
 
     /// <summary>
     /// 実施
     /// </summary>
-    Implemented = 1
+    Implemented
 }

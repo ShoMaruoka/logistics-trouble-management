@@ -2,6 +2,15 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import type { IncidentDto } from "@/lib/api-types";
+import { 
+  getTroubleTypeName, 
+  getDamageTypeName, 
+  getWarehouseName, 
+  getShippingCompanyName, 
+  getEffectivenessStatusName,
+  getTroubleTypeColor,
+  getEffectivenessStatusColor
+} from "@/lib/enumHelpers";
 
 interface IncidentListProps {
   incidents: IncidentDto[];
@@ -23,91 +32,6 @@ export function IncidentList({
   const getSortIcon = (key: keyof IncidentDto) => {
     if (sortConfig?.key !== key) return "↕";
     return sortConfig.direction === 'ascending' ? "↑" : "↓";
-  };
-
-  // 物流特化フィールドの日本語表示用ヘルパー関数
-  const getTroubleTypeLabel = (troubleType: string) => {
-    switch (troubleType) {
-      case 'ProductTrouble':
-        return '商品トラブル';
-      case 'DeliveryTrouble':
-        return '配送トラブル';
-      default:
-        return troubleType;
-    }
-  };
-
-  const getDamageTypeLabel = (damageType: string) => {
-    switch (damageType) {
-      case 'WrongShipment':
-        return '誤出荷';
-      case 'EarlyOrLateArrival':
-        return '早着・延着';
-      case 'Lost':
-        return '紛失';
-      case 'WrongDelivery':
-        return '誤配送';
-      case 'DamageOrContamination':
-        return '破損・汚損';
-      case 'OtherDeliveryMistake':
-        return 'その他の配送ミス';
-      case 'OtherProductAccident':
-        return 'その他の商品事故';
-      default:
-        return damageType;
-    }
-  };
-
-  const getWarehouseLabel = (warehouse: string) => {
-    switch (warehouse) {
-      case 'WarehouseA':
-        return 'A倉庫';
-      case 'WarehouseB':
-        return 'B倉庫';
-      case 'WarehouseC':
-        return 'C倉庫';
-      default:
-        return warehouse;
-    }
-  };
-
-  const getShippingCompanyLabel = (shippingCompany: string) => {
-    switch (shippingCompany) {
-      case 'InHouse':
-        return '庫内';
-      case 'Charter':
-        return 'チャーター';
-      case 'ATransport':
-        return 'A運輸';
-      case 'BExpress':
-        return 'B急便';
-      default:
-        return shippingCompany;
-    }
-  };
-
-  const getEffectivenessStatusLabel = (effectivenessStatus: string) => {
-    switch (effectivenessStatus) {
-      case 'NotImplemented':
-        return '未実施';
-      case 'Implemented':
-        return '実施';
-      default:
-        return effectivenessStatus;
-    }
-  };
-
-  const getEffectivenessStatusBadge = (effectivenessStatus: string) => {
-    const isImplemented = effectivenessStatus === 'Implemented';
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-        isImplemented 
-          ? 'bg-logistics-green text-white' 
-          : 'bg-gray-100 text-gray-800'
-      }`}>
-        {getEffectivenessStatusLabel(effectivenessStatus)}
-      </span>
-    );
   };
 
   if (loading) {
@@ -137,7 +61,7 @@ export function IncidentList({
                 onClick={() => requestSort('occurrenceDate')}
                 className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                日付 {getSortIcon('occurrenceDate')}
+                発生日 {getSortIcon('occurrenceDate')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
@@ -194,25 +118,23 @@ export function IncidentList({
                 {new Date(incident.occurrenceDate).toLocaleDateString('ja-JP')}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  incident.troubleType === 'ProductTrouble' 
-                    ? 'bg-logistics-red text-white' 
-                    : 'bg-logistics-orange text-white'
-                }`}>
-                  {getTroubleTypeLabel(incident.troubleType)}
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTroubleTypeColor(incident.troubleType)}`}>
+                  {getTroubleTypeName(incident.troubleType)}
                 </span>
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getDamageTypeLabel(incident.damageType)}
+                {getDamageTypeName(incident.damageType)}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getWarehouseLabel(incident.warehouse)}
+                {getWarehouseName(incident.warehouse)}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getShippingCompanyLabel(incident.shippingCompany)}
+                {getShippingCompanyName(incident.shippingCompany)}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getEffectivenessStatusBadge(incident.effectivenessStatus)}
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getEffectivenessStatusColor(incident.effectivenessStatus)}`}>
+                  {getEffectivenessStatusName(incident.effectivenessStatus)}
+                </span>
               </td>
               <td className="border border-gray-300 px-4 py-2">
                 <div className="flex gap-2">

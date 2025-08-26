@@ -6,22 +6,27 @@ namespace LogisticsTroubleManagement.Domain.Enums;
 public enum ShippingCompany
 {
     /// <summary>
+    /// 該当なし
+    /// </summary>
+    None,
+
+    /// <summary>
     /// 庫内
     /// </summary>
-    InHouse = 1,
+    InHouse,
 
     /// <summary>
     /// チャーター
     /// </summary>
-    Charter = 2,
+    Charter,
 
     /// <summary>
     /// A運輸
     /// </summary>
-    ATransport = 3,
+    ATransport,
 
     /// <summary>
     /// B急便
     /// </summary>
-    BExpress = 4
+    BExpress
 }

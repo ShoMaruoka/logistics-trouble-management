@@ -3,11 +3,11 @@
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type IncidentStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed';
 
-// 物流特化型定義
-export type TroubleType = 'ProductTrouble' | 'DeliveryTrouble';
-export type DamageType = 'WrongShipment' | 'EarlyOrLateArrival' | 'Lost' | 'WrongDelivery' | 'DamageOrContamination' | 'OtherDeliveryMistake' | 'OtherProductAccident';
-export type Warehouse = 'WarehouseA' | 'WarehouseB' | 'WarehouseC';
-export type ShippingCompany = 'InHouse' | 'Charter' | 'ATransport' | 'BExpress';
+// 物流特化型定義（文字列ベース）
+export type TroubleType = 'ProductTrouble' | 'DeliveryTrouble' | 'SystemTrouble' | 'EquipmentTrouble' | 'QualityTrouble' | 'LogisticsTrouble' | 'ManagementTrouble' | 'SafetyTrouble' | 'EnvironmentalTrouble' | 'OtherTrouble';
+export type DamageType = 'None' | 'WrongShipment' | 'EarlyOrLateArrival' | 'Lost' | 'WrongDelivery' | 'DamageOrContamination' | 'OtherDeliveryMistake' | 'OtherProductAccident';
+export type Warehouse = 'None' | 'WarehouseA' | 'WarehouseB' | 'WarehouseC';
+export type ShippingCompany = 'None' | 'InHouse' | 'Charter' | 'ATransport' | 'BExpress';
 export type EffectivenessStatus = 'NotImplemented' | 'Implemented';
 
 export interface IncidentDto {

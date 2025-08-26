@@ -212,7 +212,6 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Cause")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -244,7 +243,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("OccurrenceDate")
+                    b.Property<DateTime>("OccurrenceDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("OccurrenceLocation")
@@ -252,7 +251,6 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PreventionMeasures")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Priority")
