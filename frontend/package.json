@@ -5,11 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:dev": "cross-env NODE_ENV=development next build",
+    "build:prod": "cross-env NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "export": "next build",
+    "export:dev": "cross-env NODE_ENV=development next build",
+    "export:prod": "cross-env NODE_ENV=production next build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",

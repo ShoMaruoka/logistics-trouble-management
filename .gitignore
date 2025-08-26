@@ -24,3 +24,5 @@
 .playwright-mcp/logistics-form-wide-layout-fixed.png
 .playwright-mcp/logistics-form-wide-layout.png
 .playwright-mcp/logistics-trouble-list-updated.png
+/backend/publish/
+/node_modules/

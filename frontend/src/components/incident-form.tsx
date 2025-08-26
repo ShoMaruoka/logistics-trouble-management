@@ -110,15 +110,16 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
     
     // カテゴリを自動生成（トラブル種類 + 損傷種類）
     const troubleTypeLabel = formData.troubleType === 'ProductTrouble' ? '商品トラブル' : '配送トラブル';
-    const damageTypeLabels = {
-      'WrongShipment': '誤出荷',
-      'EarlyOrLateArrival': '早着・延着',
-      'Lost': '紛失',
-      'WrongDelivery': '誤配送',
-      'DamageOrContamination': '破損・汚損',
-      'OtherDeliveryMistake': 'その他の配送ミス',
-      'OtherProductAccident': 'その他の商品事故'
-    };
+          const damageTypeLabels = {
+        'None': 'なし',
+        'WrongShipment': '誤出荷',
+        'EarlyOrLateArrival': '早着・延着',
+        'Lost': '紛失',
+        'WrongDelivery': '誤配送',
+        'DamageOrContamination': '破損・汚損',
+        'OtherDeliveryMistake': 'その他の配送ミス',
+        'OtherProductAccident': 'その他の商品事故'
+      };
     const damageTypeLabel = damageTypeLabels[formData.damageType];
     const autoCategory = `${troubleTypeLabel} - ${damageTypeLabel}`;
     
