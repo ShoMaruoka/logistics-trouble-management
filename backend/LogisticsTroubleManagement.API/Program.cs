@@ -104,7 +104,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
-app.UseAuthorization();
+// 短期対応: 認証・認可を一時的に無効化
+// app.UseAuthentication();
+// app.UseAuthorization();
 
 app.MapControllers();
 
