@@ -243,7 +243,7 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
         {
             return Incident.Create(title, "テスト用のインシデント", "テスト", 1, 
                 TroubleType.ProductTrouble, DamageType.DamageOrContamination, 
-                Warehouse.WarehouseA, ShippingCompany.InHouse, priority);
+                Warehouse.WarehouseA, ShippingCompany.InHouse, DateTime.UtcNow, priority);
         }
 
         public void Dispose()

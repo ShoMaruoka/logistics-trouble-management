@@ -256,6 +256,7 @@ namespace LogisticsTroubleManagement.Tests.Integration
                     DamageType.OtherDeliveryMistake,
                     Warehouse.WarehouseA,
                     ShippingCompany.ATransport,
+                    DateTime.UtcNow,
                     Priority.Medium
                 ),
                 LogisticsTroubleManagement.Domain.Entities.Incident.Create(
@@ -267,6 +268,7 @@ namespace LogisticsTroubleManagement.Tests.Integration
                     DamageType.DamageOrContamination,
                     Warehouse.WarehouseB,
                     ShippingCompany.BExpress,
+                    DateTime.UtcNow,
                     Priority.High
                 )
             };

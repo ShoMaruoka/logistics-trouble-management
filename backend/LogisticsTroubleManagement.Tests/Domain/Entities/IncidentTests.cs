@@ -20,7 +20,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
             // Act
             var incident = Incident.Create(title, description, category, reportedById, 
                 TroubleType.DeliveryTrouble, DamageType.OtherDeliveryMistake, 
-                Warehouse.WarehouseA, ShippingCompany.ATransport, priority);
+                Warehouse.WarehouseA, ShippingCompany.ATransport, DateTime.UtcNow, priority);
 
             // Assert
             Assert.NotNull(incident);
@@ -174,6 +174,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
                 DamageType.DamageOrContamination,
                 Warehouse.WarehouseA,
                 ShippingCompany.InHouse,
+                DateTime.UtcNow,
                 Priority.Medium
             );
         }
