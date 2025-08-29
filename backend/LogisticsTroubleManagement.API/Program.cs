@@ -60,6 +60,12 @@ builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IEffectivenessRepository, EffectivenessRepository>();
 
+// Add Master Data Repositories
+builder.Services.AddScoped<ITroubleTypeRepository, TroubleTypeRepository>();
+builder.Services.AddScoped<IDamageTypeRepository, DamageTypeRepository>();
+builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<IShippingCompanyRepository, ShippingCompanyRepository>();
+
 // Add Domain Services
 builder.Services.AddScoped<IncidentDomainService>();
 

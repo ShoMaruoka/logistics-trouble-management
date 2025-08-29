@@ -12,11 +12,18 @@ public class IncidentDto
     public string Category { get; set; } = string.Empty;
     
     // 物流特化項目
-    public TroubleType TroubleType { get; set; }
-    public DamageType DamageType { get; set; }
-    public Warehouse Warehouse { get; set; }
-    public ShippingCompany ShippingCompany { get; set; }
+    public int TroubleTypeId { get; set; }
+    public int DamageTypeId { get; set; }
+    public int WarehouseId { get; set; }
+    public int ShippingCompanyId { get; set; }
     public EffectivenessStatus EffectivenessStatus { get; set; }
+    
+    // 表示用のマスタ情報
+    public string TroubleTypeName { get; set; } = string.Empty;
+    public string TroubleTypeColor { get; set; } = "#3B82F6";
+    public string DamageTypeName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string ShippingCompanyName { get; set; } = string.Empty;
     
     // 新規追加項目（提供サイト対応）
     public string IncidentDetails { get; set; } = string.Empty; // 発生経緯

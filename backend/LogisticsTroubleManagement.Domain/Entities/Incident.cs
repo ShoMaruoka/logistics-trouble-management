@@ -11,10 +11,10 @@ public class Incident : BaseEntity
     public string Category { get; private set; }
     
     // 物流特化項目
-    public TroubleType TroubleType { get; private set; }
-    public DamageType DamageType { get; private set; }
-    public Warehouse Warehouse { get; private set; }
-    public ShippingCompany ShippingCompany { get; private set; }
+    public int TroubleTypeId { get; private set; }
+    public int DamageTypeId { get; private set; }
+    public int WarehouseId { get; private set; }
+    public int ShippingCompanyId { get; private set; }
     public EffectivenessStatus EffectivenessStatus { get; private set; }
     
     // 新規追加項目（提供サイト対応）
@@ -38,6 +38,10 @@ public class Incident : BaseEntity
     // Navigation properties
     public virtual User ReportedBy { get; private set; } = null!;
     public virtual User? AssignedTo { get; private set; }
+    public virtual TroubleType TroubleType { get; private set; } = null!;
+    public virtual DamageType DamageType { get; private set; } = null!;
+    public virtual Warehouse Warehouse { get; private set; } = null!;
+    public virtual ShippingCompany ShippingCompany { get; private set; } = null!;
     public virtual ICollection<Attachment> Attachments { get; private set; } = new List<Attachment>();
     public virtual ICollection<AuditLog> AuditLogs { get; private set; } = new List<AuditLog>();
     public virtual ICollection<Effectiveness> Effectiveness { get; private set; } = new List<Effectiveness>();
@@ -45,8 +49,8 @@ public class Incident : BaseEntity
     private Incident() { } // For EF Core
 
     public Incident(string title, string description, string category, int reportedById, 
-        TroubleType troubleType, DamageType damageType, Warehouse warehouse, 
-        ShippingCompany shippingCompany, DateTime occurrenceDate, Priority priority = Priority.Medium,
+        int troubleTypeId, int damageTypeId, int warehouseId, int shippingCompanyId, 
+        DateTime occurrenceDate, Priority priority = Priority.Medium,
         string incidentDetails = "", int totalShipments = 0, int defectiveItems = 0,
         string occurrenceLocation = "", string summary = "",
         string cause = "", string preventionMeasures = "")
@@ -55,10 +59,10 @@ public class Incident : BaseEntity
         Description = description ?? throw new ArgumentNullException(nameof(description));
         Category = category ?? throw new ArgumentNullException(nameof(category));
         ReportedById = reportedById;
-        TroubleType = troubleType;
-        DamageType = damageType;
-        Warehouse = warehouse;
-        ShippingCompany = shippingCompany;
+        TroubleTypeId = troubleTypeId;
+        DamageTypeId = damageTypeId;
+        WarehouseId = warehouseId;
+        ShippingCompanyId = shippingCompanyId;
         EffectivenessStatus = EffectivenessStatus.NotImplemented;
         Priority = priority;
         Status = IncidentStatus.Open;
@@ -79,14 +83,14 @@ public class Incident : BaseEntity
     }
 
     public static Incident Create(string title, string description, string category, int reportedById, 
-        TroubleType troubleType, DamageType damageType, Warehouse warehouse, 
-        ShippingCompany shippingCompany, DateTime occurrenceDate, Priority priority = Priority.Medium,
+        int troubleTypeId, int damageTypeId, int warehouseId, int shippingCompanyId, 
+        DateTime occurrenceDate, Priority priority = Priority.Medium,
         string incidentDetails = "", int totalShipments = 0, int defectiveItems = 0,
         string occurrenceLocation = "", string summary = "",
         string cause = "", string preventionMeasures = "")
     {
-        return new Incident(title, description, category, reportedById, troubleType, damageType, 
-            warehouse, shippingCompany, occurrenceDate, priority, incidentDetails, totalShipments, defectiveItems,
+        return new Incident(title, description, category, reportedById, troubleTypeId, damageTypeId, 
+            warehouseId, shippingCompanyId, occurrenceDate, priority, incidentDetails, totalShipments, defectiveItems,
             occurrenceLocation, summary, cause, preventionMeasures);
     }
 
@@ -136,13 +140,13 @@ public class Incident : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateLogisticsDetails(TroubleType troubleType, DamageType damageType, 
-        Warehouse warehouse, ShippingCompany shippingCompany)
+    public void UpdateLogisticsDetails(int troubleTypeId, int damageTypeId, 
+        int warehouseId, int shippingCompanyId)
     {
-        TroubleType = troubleType;
-        DamageType = damageType;
-        Warehouse = warehouse;
-        ShippingCompany = shippingCompany;
+        TroubleTypeId = troubleTypeId;
+        DamageTypeId = damageTypeId;
+        WarehouseId = warehouseId;
+        ShippingCompanyId = shippingCompanyId;
         UpdatedAt = DateTime.UtcNow;
     }
 
