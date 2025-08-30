@@ -105,7 +105,7 @@ class ApiClient {
 	}
 
 	// インシデント関連API
-	async getIncidents(searchParams?: IncidentSearchDto): Promise<PagedResultDto<IncidentDto>> {
+	async getIncidents(searchParams?: IncidentSearchDto): Promise<PagedResultDto<Incident>> {
 		const params = new URLSearchParams();
 		if (searchParams) {
 			(Object.entries(searchParams) as Array<[keyof IncidentSearchDto, IncidentSearchDto[keyof IncidentSearchDto]]>).forEach(([key, value]) => {
@@ -118,23 +118,23 @@ class ApiClient {
 		const queryString = params.toString();
 		const endpoint = `/api/incidents${queryString ? `?${queryString}` : ''}`;
 		
-		return this.request<PagedResultDto<IncidentDto>>(endpoint);
+		return this.request<PagedResultDto<Incident>>(endpoint);
 	}
 
-	async getIncident(id: number): Promise<IncidentDto> {
-		return this.request<IncidentDto>(`/api/incidents/${id}`);
+	async getIncident(id: number): Promise<Incident> {
+		return this.request<Incident>(`/api/incidents/${id}`);
 	}
 
-	async createIncident(data: CreateIncidentDto): Promise<IncidentDto> {
+	async createIncident(data: CreateIncidentDto): Promise<Incident> {
 		console.log('送信データ:', JSON.stringify(data, null, 2));
-		return this.request<IncidentDto>('/api/incidents', {
+		return this.request<Incident>('/api/incidents', {
 			method: 'POST',
 			body: JSON.stringify(data),
 		});
 	}
 
-	async updateIncident(id: number, data: UpdateIncidentDto): Promise<IncidentDto> {
-		return this.request<IncidentDto>(`/api/incidents/${id}`, {
+	async updateIncident(id: number, data: UpdateIncidentDto): Promise<Incident> {
+		return this.request<Incident>(`/api/incidents/${id}`, {
 			method: 'PUT',
 			body: JSON.stringify(data),
 		});
@@ -436,7 +436,7 @@ class ApiClient {
 
 // 型インポート
 import type {
-	IncidentDto,
+	Incident,
 	CreateIncidentDto,
 	UpdateIncidentDto,
 	IncidentSearchDto,

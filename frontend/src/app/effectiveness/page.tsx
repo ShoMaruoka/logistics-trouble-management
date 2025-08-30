@@ -20,7 +20,7 @@ import type {
   EffectivenessSearchDto,
   CreateEffectivenessDto,
   UpdateEffectivenessDto
-} from "@/lib/api-types";
+} from "@/lib/types";
 
 export default function EffectivenessPage() {
   // 状態管理
@@ -207,7 +207,7 @@ export default function EffectivenessPage() {
       {effectivenessData && effectivenessData.totalPages > 1 && (
         <div className="flex justify-center">
           <Pagination
-            currentPage={effectivenessData.page}
+            currentPage={effectivenessData.pageNumber}
             totalPages={effectivenessData.totalPages}
             onPageChange={handlePageChange}
           />

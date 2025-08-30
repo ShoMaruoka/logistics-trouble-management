@@ -8,6 +8,7 @@ using LogisticsTroubleManagement.Infrastructure.Data;
 using LogisticsTroubleManagement.Core.DTOs;
 using LogisticsTroubleManagement.Domain.Enums;
 using Xunit;
+using DomainEnums = LogisticsTroubleManagement.Domain.Enums;
 
 namespace LogisticsTroubleManagement.Tests.Integration
 {
@@ -252,10 +253,10 @@ namespace LogisticsTroubleManagement.Tests.Integration
                     "商品の配送が予定より2日遅れている",
                     "配送",
                     1,
-                    TroubleType.DeliveryTrouble,
-                    DamageType.OtherDeliveryMistake,
-                    Warehouse.WarehouseA,
-                    ShippingCompany.ATransport,
+                    (int)DomainEnums.TroubleType.DeliveryTrouble,
+                    (int)DomainEnums.DamageType.OtherDeliveryMistake,
+                    (int)DomainEnums.Warehouse.WarehouseA,
+                    (int)DomainEnums.ShippingCompany.ATransport,
                     DateTime.UtcNow,
                     Priority.Medium
                 ),
@@ -264,10 +265,10 @@ namespace LogisticsTroubleManagement.Tests.Integration
                     "配送中に商品が破損した",
                     "品質",
                     1,
-                    TroubleType.ProductTrouble,
-                    DamageType.DamageOrContamination,
-                    Warehouse.WarehouseB,
-                    ShippingCompany.BExpress,
+                    (int)DomainEnums.TroubleType.ProductTrouble,
+                    (int)DomainEnums.DamageType.DamageOrContamination,
+                    (int)DomainEnums.Warehouse.WarehouseB,
+                    (int)DomainEnums.ShippingCompany.BExpress,
                     DateTime.UtcNow,
                     Priority.High
                 )

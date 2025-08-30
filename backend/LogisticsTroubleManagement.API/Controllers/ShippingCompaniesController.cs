@@ -13,15 +13,18 @@ namespace LogisticsTroubleManagement.API.Controllers
         private readonly IShippingCompanyRepository _shippingCompanyRepository;
         private readonly CreateShippingCompanyDtoValidator _createValidator;
         private readonly UpdateShippingCompanyDtoValidator _updateValidator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ShippingCompaniesController(
             IShippingCompanyRepository shippingCompanyRepository,
             CreateShippingCompanyDtoValidator createValidator,
-            UpdateShippingCompanyDtoValidator updateValidator)
+            UpdateShippingCompanyDtoValidator updateValidator,
+            IUnitOfWork unitOfWork)
         {
             _shippingCompanyRepository = shippingCompanyRepository;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
@@ -77,7 +80,7 @@ namespace LogisticsTroubleManagement.API.Controllers
             );
 
             await _shippingCompanyRepository.AddAsync(shippingCompany);
-            await _shippingCompanyRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = shippingCompany.Id }, MapToDto(shippingCompany));
         }
@@ -100,7 +103,7 @@ namespace LogisticsTroubleManagement.API.Controllers
                 updateDto.ContactInfo, updateDto.SortOrder);
             shippingCompany.SetActive(updateDto.IsActive);
 
-            await _shippingCompanyRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }
@@ -114,7 +117,7 @@ namespace LogisticsTroubleManagement.API.Controllers
 
             // 論理削除（無効化）
             shippingCompany.SetActive(false);
-            await _shippingCompanyRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }

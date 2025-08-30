@@ -5,6 +5,7 @@ using LogisticsTroubleManagement.Infrastructure.Repositories;
 using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.ValueObjects;
+using DomainEnums = LogisticsTroubleManagement.Domain.Enums;
 
 namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
 {
@@ -242,8 +243,8 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
         private static Incident CreateTestIncident(string title = "テストインシデント", Priority priority = Priority.Medium)
         {
             return Incident.Create(title, "テスト用のインシデント", "テスト", 1, 
-                TroubleType.ProductTrouble, DamageType.DamageOrContamination, 
-                Warehouse.WarehouseA, ShippingCompany.InHouse, DateTime.UtcNow, priority);
+                (int)DomainEnums.TroubleType.ProductTrouble, (int)DomainEnums.DamageType.DamageOrContamination, 
+                (int)DomainEnums.Warehouse.WarehouseA, (int)DomainEnums.ShippingCompany.InHouse, DateTime.UtcNow, priority);
         }
 
         public void Dispose()

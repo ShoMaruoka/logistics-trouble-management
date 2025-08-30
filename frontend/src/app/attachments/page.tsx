@@ -18,7 +18,7 @@ import type {
   AttachmentDto,
   AttachmentSearchDto,
   CreateAttachmentDto
-} from "@/lib/api-types";
+} from "@/lib/types";
 
 export default function AttachmentsPage() {
   // 状態管理
@@ -154,7 +154,7 @@ export default function AttachmentsPage() {
       {attachmentsData && attachmentsData.totalPages > 1 && (
         <div className="flex justify-center">
           <Pagination
-            currentPage={attachmentsData.page}
+            currentPage={attachmentsData.pageNumber}
             totalPages={attachmentsData.totalPages}
             onPageChange={handlePageChange}
           />

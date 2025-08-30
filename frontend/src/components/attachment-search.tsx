@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, X } from "lucide-react";
-import type { AttachmentSearchDto } from "@/lib/api-types";
+import type { AttachmentSearchDto } from "@/lib/types";
 
 interface AttachmentSearchProps {
   searchParams: AttachmentSearchDto;

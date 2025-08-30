@@ -13,15 +13,18 @@ namespace LogisticsTroubleManagement.API.Controllers
         private readonly IDamageTypeRepository _damageTypeRepository;
         private readonly CreateDamageTypeDtoValidator _createValidator;
         private readonly UpdateDamageTypeDtoValidator _updateValidator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public DamageTypesController(
             IDamageTypeRepository damageTypeRepository,
             CreateDamageTypeDtoValidator createValidator,
-            UpdateDamageTypeDtoValidator updateValidator)
+            UpdateDamageTypeDtoValidator updateValidator,
+            IUnitOfWork unitOfWork)
         {
             _damageTypeRepository = damageTypeRepository;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
@@ -76,7 +79,7 @@ namespace LogisticsTroubleManagement.API.Controllers
             );
 
             await _damageTypeRepository.AddAsync(damageType);
-            await _damageTypeRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = damageType.Id }, MapToDto(damageType));
         }
@@ -98,7 +101,7 @@ namespace LogisticsTroubleManagement.API.Controllers
             damageType.Update(updateDto.Name, updateDto.Description, updateDto.Category, updateDto.SortOrder);
             damageType.SetActive(updateDto.IsActive);
 
-            await _damageTypeRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }
@@ -112,7 +115,7 @@ namespace LogisticsTroubleManagement.API.Controllers
 
             // 論理削除（無効化）
             damageType.SetActive(false);
-            await _damageTypeRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }

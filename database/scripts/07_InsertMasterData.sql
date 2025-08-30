@@ -45,7 +45,7 @@ INSERT INTO ShippingCompanies (Name, Description, CompanyType, SortOrder) VALUES
 (N'A運輸', N'A運輸会社の利用', 'External', 4),
 (N'B急便', N'B急便の利用', 'External', 5);
 
-PRINT 'マスタデータの投入が完了しました。';
+PRINT N'マスタデータの投入が完了しました。';
 GO
 
 -- 投入されたデータの確認

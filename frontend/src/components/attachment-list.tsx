@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Trash2, FileText, Image, File } from "lucide-react";
-import type { AttachmentDto } from "@/lib/api-types";
+import type { AttachmentDto } from "@/lib/types";
 
 interface AttachmentListProps {
   attachments: AttachmentDto[];

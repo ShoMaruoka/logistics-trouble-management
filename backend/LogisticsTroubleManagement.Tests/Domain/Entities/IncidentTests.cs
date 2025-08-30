@@ -2,6 +2,7 @@ using Xunit;
 using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.ValueObjects;
+using DomainEnums = LogisticsTroubleManagement.Domain.Enums;
 
 namespace LogisticsTroubleManagement.Tests.Domain.Entities
 {
@@ -19,8 +20,8 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
 
             // Act
             var incident = Incident.Create(title, description, category, reportedById, 
-                TroubleType.DeliveryTrouble, DamageType.OtherDeliveryMistake, 
-                Warehouse.WarehouseA, ShippingCompany.ATransport, DateTime.UtcNow, priority);
+                (int)DomainEnums.TroubleType.DeliveryTrouble, (int)DomainEnums.DamageType.OtherDeliveryMistake, 
+                (int)DomainEnums.Warehouse.WarehouseA, (int)DomainEnums.ShippingCompany.ATransport, DateTime.UtcNow, priority);
 
             // Assert
             Assert.NotNull(incident);
@@ -170,10 +171,10 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
                 "テスト用のインシデント",
                 "テスト",
                 1,
-                TroubleType.ProductTrouble,
-                DamageType.DamageOrContamination,
-                Warehouse.WarehouseA,
-                ShippingCompany.InHouse,
+                (int)DomainEnums.TroubleType.ProductTrouble,
+                (int)DomainEnums.DamageType.DamageOrContamination,
+                (int)DomainEnums.Warehouse.WarehouseA,
+                (int)DomainEnums.ShippingCompany.InHouse,
                 DateTime.UtcNow,
                 Priority.Medium
             );

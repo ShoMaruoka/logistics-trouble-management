@@ -81,5 +81,5 @@ ALTER TABLE DamageTypes ADD CONSTRAINT UQ_DamageTypes_Name UNIQUE (Name);
 ALTER TABLE Warehouses ADD CONSTRAINT UQ_Warehouses_Name UNIQUE (Name);
 ALTER TABLE ShippingCompanies ADD CONSTRAINT UQ_ShippingCompanies_Name UNIQUE (Name);
 
-PRINT 'マスタテーブルの作成が完了しました。';
+PRINT N'マスタテーブルの作成が完了しました。';
 GO

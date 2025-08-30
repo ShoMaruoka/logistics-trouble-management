@@ -10,10 +10,10 @@ public class CreateIncidentDto
     public Priority Priority { get; set; } = Priority.Medium;
     
     // 物流特化項目
-    public TroubleType TroubleType { get; set; }
-    public DamageType DamageType { get; set; }
-    public Warehouse Warehouse { get; set; }
-    public ShippingCompany ShippingCompany { get; set; }
+    public int TroubleType { get; set; }
+    public int DamageType { get; set; }
+    public int Warehouse { get; set; }
+    public int ShippingCompany { get; set; }
     
     // 新規追加項目（提供サイト対応）
     public string IncidentDetails { get; set; } = string.Empty; // 発生経緯

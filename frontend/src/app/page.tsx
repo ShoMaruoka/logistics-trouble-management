@@ -16,7 +16,7 @@ import {
 import { IncidentForm } from "@/components/incident-form";
 import { Dashboard } from "@/components/dashboard";
 import { IncidentManagement } from "@/components/incident-management";
-import type { IncidentDto, CreateIncidentDto, UpdateIncidentDto } from "@/lib/api-types";
+import type { Incident, CreateIncidentDto, UpdateIncidentDto } from "@/lib/types";
 import { Logo } from "@/components/icons";
 import { 
   useCreateIncident, 
@@ -26,7 +26,7 @@ import {
 
 export default function Home() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingIncident, setEditingIncident] = useState<IncidentDto | null>(null);
+  const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
 
   const { createIncident, loading: createLoading } = useCreateIncident();
   const { updateIncident, loading: updateLoading } = useUpdateIncident();
@@ -39,10 +39,10 @@ export default function Home() {
         description: data.description,
         category: data.category,
         priority: data.priority,
-        troubleType: data.troubleType,
-        damageType: data.damageType,
-        warehouse: data.warehouse,
-        shippingCompany: data.shippingCompany,
+        troubleTypeId: data.troubleTypeId,
+        damageTypeId: data.damageTypeId,
+        warehouseId: data.warehouseId,
+        shippingCompanyId: data.shippingCompanyId,
         incidentDetails: data.incidentDetails,
         totalShipments: data.totalShipments,
         defectiveItems: data.defectiveItems,
@@ -73,10 +73,10 @@ export default function Home() {
         description: data.description,
         category: data.category,
         priority: data.priority,
-        troubleType: data.troubleType,
-        damageType: data.damageType,
-        warehouse: data.warehouse,
-        shippingCompany: data.shippingCompany,
+        troubleTypeId: data.troubleTypeId,
+        damageTypeId: data.damageTypeId,
+        warehouseId: data.warehouseId,
+        shippingCompanyId: data.shippingCompanyId,
         effectivenessStatus: data.effectivenessStatus,
         incidentDetails: data.incidentDetails,
         totalShipments: data.totalShipments,
@@ -107,7 +107,7 @@ export default function Home() {
     }
   };
 
-  const handleDeleteIncident = async (incident: IncidentDto) => {
+  const handleDeleteIncident = async (incident: Incident) => {
     if (confirm('この物流トラブルを削除しますか？')) {
       try {
         await deleteIncident(incident.id);
@@ -119,7 +119,7 @@ export default function Home() {
     }
   };
 
-  const handleEdit = (incident: IncidentDto) => {
+  const handleEdit = (incident: Incident) => {
     setEditingIncident(incident);
     setIsDialogOpen(true);
   };

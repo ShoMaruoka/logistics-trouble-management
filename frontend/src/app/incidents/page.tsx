@@ -18,11 +18,11 @@ import {
   useDeleteIncident 
 } from "@/lib/hooks";
 import type { 
-  IncidentDto, 
+  Incident, 
   IncidentSearchDto, 
   CreateIncidentDto, 
   UpdateIncidentDto 
-} from "@/lib/api-types";
+} from "@/lib/types";
 
 export default function IncidentsPage() {
   // 共通フィルタ状態
@@ -37,17 +37,17 @@ export default function IncidentsPage() {
   });
   
   const [sortConfig, setSortConfig] = React.useState<{
-    key: keyof IncidentDto;
+    key: keyof Incident;
     direction: 'ascending' | 'descending';
   } | null>({
     key: 'occurrenceDate',
     direction: 'descending',
   });
 
-  const [selectedIncident, setSelectedIncident] = React.useState<IncidentDto | null>(null);
+  const [selectedIncident, setSelectedIncident] = React.useState<Incident | null>(null);
   const [showDetail, setShowDetail] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
-  const [editingIncident, setEditingIncident] = React.useState<IncidentDto | null>(null);
+  const [editingIncident, setEditingIncident] = React.useState<Incident | null>(null);
 
   // API Hooks
   const { data: incidentsData, loading: incidentsLoading, error: incidentsError, refetch: refetchIncidents } = useIncidents(searchParams);
@@ -56,7 +56,7 @@ export default function IncidentsPage() {
   const { deleteIncident, loading: deleteLoading } = useDeleteIncident();
 
   // ソート処理
-  const handleSort = (key: keyof IncidentDto) => {
+  const handleSort = (key: keyof Incident) => {
     const direction = sortConfig?.key === key && sortConfig.direction === 'ascending' ? 'descending' : 'ascending';
     setSortConfig({ key, direction });
     setSearchParams(prev => ({
@@ -120,14 +120,12 @@ export default function IncidentsPage() {
   };
 
   // インシデント操作
-  const handleIncidentClick = (incident: IncidentDto) => {
+  const handleIncidentClick = (incident: Incident) => {
     setSelectedIncident(incident);
     setShowDetail(true);
   };
 
-
-
-  const handleDeleteIncident = async (incident: IncidentDto) => {
+  const handleDeleteIncident = async (incident: Incident) => {
     if (window.confirm(`インシデント「${incident.title}」を削除しますか？`)) {
       try {
         await deleteIncident(incident.id);
@@ -235,7 +233,7 @@ export default function IncidentsPage() {
       {incidentsData && incidentsData.totalPages > 1 && (
         <div className="flex justify-center">
           <Pagination
-            currentPage={incidentsData.page}
+            currentPage={incidentsData.pageNumber}
             totalPages={incidentsData.totalPages}
             onPageChange={handlePageChange}
           />

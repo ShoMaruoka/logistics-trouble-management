@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, X } from "lucide-react";
-import type { EffectivenessDto, CreateEffectivenessDto, UpdateEffectivenessDto } from "@/lib/api-types";
+import type { EffectivenessDto, CreateEffectivenessDto, UpdateEffectivenessDto } from "@/lib/types";
 
 interface EffectivenessFormProps {
   effectiveness?: EffectivenessDto;
@@ -103,6 +103,7 @@ export function EffectivenessForm({ effectiveness, onSave, onCancel, loading = f
         effectivenessType: formData.effectivenessType,
         beforeValue: formData.beforeValue,
         afterValue: formData.afterValue,
+        improvementRate: calculateImprovementRate(),
         description: formData.description,
         measuredById: formData.measuredById
       };

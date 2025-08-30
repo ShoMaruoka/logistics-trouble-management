@@ -13,15 +13,18 @@ namespace LogisticsTroubleManagement.API.Controllers
         private readonly IWarehouseRepository _warehouseRepository;
         private readonly CreateWarehouseDtoValidator _createValidator;
         private readonly UpdateWarehouseDtoValidator _updateValidator;
+        private readonly IUnitOfWork _unitOfWork;
 
         public WarehousesController(
             IWarehouseRepository warehouseRepository,
             CreateWarehouseDtoValidator createValidator,
-            UpdateWarehouseDtoValidator updateValidator)
+            UpdateWarehouseDtoValidator updateValidator,
+            IUnitOfWork unitOfWork)
         {
             _warehouseRepository = warehouseRepository;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
@@ -69,7 +72,7 @@ namespace LogisticsTroubleManagement.API.Controllers
             );
 
             await _warehouseRepository.AddAsync(warehouse);
-            await _warehouseRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = warehouse.Id }, MapToDto(warehouse));
         }
@@ -92,7 +95,7 @@ namespace LogisticsTroubleManagement.API.Controllers
                 updateDto.ContactInfo, updateDto.SortOrder);
             warehouse.SetActive(updateDto.IsActive);
 
-            await _warehouseRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }
@@ -106,7 +109,7 @@ namespace LogisticsTroubleManagement.API.Controllers
 
             // 論理削除（無効化）
             warehouse.SetActive(false);
-            await _warehouseRepository.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return NoContent();
         }

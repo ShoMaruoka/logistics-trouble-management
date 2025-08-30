@@ -16,6 +16,10 @@ public class IncidentsController : ControllerBase
     private readonly IIncidentRepository _incidentRepository;
     private readonly IUserRepository _userRepository;
     private readonly IncidentDomainService _incidentDomainService;
+    private readonly ITroubleTypeRepository _troubleTypeRepository;
+    private readonly IDamageTypeRepository _damageTypeRepository;
+    private readonly IWarehouseRepository _warehouseRepository;
+    private readonly IShippingCompanyRepository _shippingCompanyRepository;
     private readonly ILogger<IncidentsController> _logger;
 
     public IncidentsController(
@@ -23,12 +27,20 @@ public class IncidentsController : ControllerBase
         IIncidentRepository incidentRepository,
         IUserRepository userRepository,
         IncidentDomainService incidentDomainService,
+        ITroubleTypeRepository troubleTypeRepository,
+        IDamageTypeRepository damageTypeRepository,
+        IWarehouseRepository warehouseRepository,
+        IShippingCompanyRepository shippingCompanyRepository,
         ILogger<IncidentsController> logger)
     {
         _unitOfWork = unitOfWork;
         _incidentRepository = incidentRepository;
         _userRepository = userRepository;
         _incidentDomainService = incidentDomainService;
+        _troubleTypeRepository = troubleTypeRepository;
+        _damageTypeRepository = damageTypeRepository;
+        _warehouseRepository = warehouseRepository;
+        _shippingCompanyRepository = shippingCompanyRepository;
         _logger = logger;
     }
 
@@ -489,6 +501,12 @@ public class IncidentsController : ControllerBase
             ? await _userRepository.GetByIdAsync(incident.AssignedToId.Value) 
             : null;
 
+        // マスタ情報の取得
+        var troubleType = await _troubleTypeRepository.GetByIdAsync(incident.TroubleTypeId);
+        var damageType = await _damageTypeRepository.GetByIdAsync(incident.DamageTypeId);
+        var warehouse = await _warehouseRepository.GetByIdAsync(incident.WarehouseId);
+        var shippingCompany = await _shippingCompanyRepository.GetByIdAsync(incident.ShippingCompanyId);
+
         var expectedResolutionTime = TimeSpan.FromDays(3); // デフォルト3日
 
         return new IncidentDto
@@ -499,11 +517,17 @@ public class IncidentsController : ControllerBase
             Status = incident.Status,
             Priority = incident.Priority,
             Category = incident.Category,
-            TroubleType = incident.TroubleType,
-            DamageType = incident.DamageType,
-            Warehouse = incident.Warehouse,
-            ShippingCompany = incident.ShippingCompany,
+            TroubleTypeId = incident.TroubleTypeId,
+            DamageTypeId = incident.DamageTypeId,
+            WarehouseId = incident.WarehouseId,
+            ShippingCompanyId = incident.ShippingCompanyId,
             EffectivenessStatus = incident.EffectivenessStatus,
+            // 表示用のマスタ情報
+            TroubleTypeName = troubleType?.Name ?? "不明",
+            TroubleTypeColor = troubleType?.Color ?? "#3B82F6",
+            DamageTypeName = damageType?.Name ?? "不明",
+            WarehouseName = warehouse?.Name ?? "不明",
+            ShippingCompanyName = shippingCompany?.Name ?? "不明",
             IncidentDetails = incident.IncidentDetails,
             TotalShipments = incident.TotalShipments,
             DefectiveItems = incident.DefectiveItems,
