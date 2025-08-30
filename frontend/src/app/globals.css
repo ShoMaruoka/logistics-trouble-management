@@ -220,16 +220,41 @@
   }
 }
 
-/* タブの選択状態のスタイル */
+/* タブのスタイル */
 @layer components {
+  /* タブのデフォルト状態（常にグレー） */
+  [data-slot="tabs-trigger"] {
+    background-color: var(--muted) !important;
+    color: var(--muted-foreground) !important;
+  }
+  
+  /* タブのホバー状態（常にグレー） */
+  [data-slot="tabs-trigger"]:hover {
+    background-color: var(--muted) !important;
+    color: var(--muted-foreground) !important;
+  }
+  
+  /* 選択中のタブ（青色） */
   [data-slot="tabs-trigger"][data-state="active"] {
     background-color: var(--logistics-blue) !important;
     color: white !important;
   }
   
+  /* 選択中のタブのホバー状態（青色を維持） */
   [data-slot="tabs-trigger"][data-state="active"]:hover {
     background-color: var(--logistics-blue) !important;
     color: white !important;
+  }
+  
+  /* ダークモード対応 */
+  .dark [data-slot="tabs-trigger"] {
+    background-color: var(--muted) !important;
+    color: var(--muted-foreground) !important;
+  }
+  
+  .dark [data-slot="tabs-trigger"]:hover {
+    background-color: var(--muted) !important;
+    color: var(--muted-foreground) !important;
   }
   
   .dark [data-slot="tabs-trigger"][data-state="active"] {
