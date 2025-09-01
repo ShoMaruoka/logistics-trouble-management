@@ -10,7 +10,8 @@ import {
   BarChart3, 
   FileText, 
   TrendingUp,
-  Settings 
+  Settings,
+  Database
 } from "lucide-react";
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { name: '統計・分析', href: '/statistics', icon: BarChart3 },
   { name: 'ファイル管理', href: '/attachments', icon: FileText },
   { name: '効果測定', href: '/effectiveness', icon: TrendingUp },
+  { name: 'マスタ管理', href: '/master', icon: Database },
   { name: '設定', href: '/settings', icon: Settings },
 ];
 
