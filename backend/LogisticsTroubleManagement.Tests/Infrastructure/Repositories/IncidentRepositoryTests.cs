@@ -6,6 +6,7 @@ using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.ValueObjects;
 using DomainEnums = LogisticsTroubleManagement.Domain.Enums;
+using System.Reflection;
 
 namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
 {
@@ -185,8 +186,9 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
             var normalIncident = CreateTestIncident("通常");
 
             // Use reflection to set private property for testing
-            var reportedDateProperty = typeof(Incident).GetProperty("ReportedDate");
-            reportedDateProperty?.SetValue(overdueIncident, DateTime.UtcNow.AddDays(-8));
+            var reportedDateProperty = typeof(Incident).GetProperty("ReportedDate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var setter = reportedDateProperty?.GetSetMethod(true);
+            setter?.Invoke(overdueIncident, new object[] { DateTime.UtcNow.AddDays(-8) });
 
             var incidents = new List<Incident> { overdueIncident, normalIncident };
             await _context.Incidents.AddRangeAsync(incidents);

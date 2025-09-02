@@ -89,9 +89,23 @@ public class Incident : BaseEntity
         string occurrenceLocation = "", string summary = "",
         string cause = "", string preventionMeasures = "")
     {
+        // Enum値の検証
+        ValidateEnumValue(troubleTypeId, nameof(troubleTypeId), typeof(LogisticsTroubleManagement.Domain.Enums.TroubleType));
+        ValidateEnumValue(damageTypeId, nameof(damageTypeId), typeof(LogisticsTroubleManagement.Domain.Enums.DamageType));
+        ValidateEnumValue(warehouseId, nameof(warehouseId), typeof(LogisticsTroubleManagement.Domain.Enums.Warehouse));
+        ValidateEnumValue(shippingCompanyId, nameof(shippingCompanyId), typeof(LogisticsTroubleManagement.Domain.Enums.ShippingCompany));
+
         return new Incident(title, description, category, reportedById, troubleTypeId, damageTypeId, 
             warehouseId, shippingCompanyId, occurrenceDate, priority, incidentDetails, totalShipments, defectiveItems,
             occurrenceLocation, summary, cause, preventionMeasures);
+    }
+
+    private static void ValidateEnumValue(int value, string parameterName, Type enumType)
+    {
+        if (!Enum.IsDefined(enumType, value))
+        {
+            throw new ArgumentException($"Invalid value '{value}' for {parameterName}. Must be a valid {enumType.Name} enum value.", parameterName);
+        }
     }
 
     public void AssignTo(int userId)
@@ -240,5 +254,11 @@ public class Incident : BaseEntity
         {
             Attachments.Remove(attachment);
         }
+    }
+
+    // テスト用メソッド - ReportedDateを設定
+    public void SetReportedDate(DateTime reportedDate)
+    {
+        ReportedDate = reportedDate;
     }
 }

@@ -208,7 +208,7 @@ export interface PieChartItemDto {
 export interface PagedResultDto<T> {
   items: T[];
   totalCount: number;
-  pageNumber: number;
+  page: number;
   pageSize: number;
   totalPages: number;
   hasPreviousPage: boolean;

@@ -126,7 +126,19 @@ class ApiClient {
 	}
 
 	async createIncident(data: CreateIncidentDto): Promise<Incident> {
-		console.log('送信データ:', JSON.stringify(data, null, 2));
+		// 開発環境でのみログ出力（PII保護）
+		if (process.env.NODE_ENV === 'development') {
+			// センシティブなフィールドをサニタイズ
+			const sanitizedData = {
+				...data,
+				incidentDetails: data.incidentDetails ? '[REDACTED]' : undefined,
+				occurrenceLocation: data.occurrenceLocation ? '[REDACTED]' : undefined,
+				summary: data.summary ? '[REDACTED]' : undefined,
+				cause: data.cause ? '[REDACTED]' : undefined,
+				preventionMeasures: data.preventionMeasures ? '[REDACTED]' : undefined,
+			};
+			console.log('送信データ（サニタイズ済み）:', JSON.stringify(sanitizedData, null, 2));
+		}
 		return this.request<Incident>('/api/incidents', {
 			method: 'POST',
 			body: JSON.stringify(data),

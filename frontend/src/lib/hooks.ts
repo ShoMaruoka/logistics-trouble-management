@@ -68,7 +68,7 @@ export function useIncident(id: number) {
 			setState({ data, loading: false, error: null });
 		} catch (error) {
 			const message = error instanceof ApiError ? error.message : 'インシデントの取得に失敗しました';
-			setState({ data: null, loading: false, error: null });
+			setState({ data: null, loading: false, error: message });
 		}
 	}, [id]);
 

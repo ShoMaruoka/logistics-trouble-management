@@ -207,7 +207,7 @@ export default function EffectivenessPage() {
       {effectivenessData && effectivenessData.totalPages > 1 && (
         <div className="flex justify-center">
           <Pagination
-            currentPage={effectivenessData.pageNumber}
+            currentPage={effectivenessData.page}
             totalPages={effectivenessData.totalPages}
             onPageChange={handlePageChange}
           />

@@ -154,7 +154,7 @@ export default function AttachmentsPage() {
       {attachmentsData && attachmentsData.totalPages > 1 && (
         <div className="flex justify-center">
           <Pagination
-            currentPage={attachmentsData.pageNumber}
+            currentPage={attachmentsData.page}
             totalPages={attachmentsData.totalPages}
             onPageChange={handlePageChange}
           />

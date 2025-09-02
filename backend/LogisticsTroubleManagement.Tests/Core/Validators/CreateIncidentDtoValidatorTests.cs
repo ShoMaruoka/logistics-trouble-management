@@ -3,6 +3,7 @@ using FluentValidation.TestHelper;
 using LogisticsTroubleManagement.Core.DTOs;
 using LogisticsTroubleManagement.Core.Validators;
 using LogisticsTroubleManagement.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace LogisticsTroubleManagement.Tests.Core.Validators
 {
@@ -25,7 +26,13 @@ namespace LogisticsTroubleManagement.Tests.Core.Validators
                 Description = "商品の配送が予定より2日遅れている",
                 Category = "配送",
                 Priority = Priority.Medium,
-                ReportedById = 1
+                ReportedById = 1,
+                TroubleType = 1,
+                DamageType = 1,
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now
             };
 
             // Act
@@ -271,7 +278,13 @@ namespace LogisticsTroubleManagement.Tests.Core.Validators
                 Description = "商品の配送が予定より2日遅れている。顧客からの問い合わせがあり、緊急対応が必要。",
                 Category = "配送・物流",
                 Priority = Priority.High,
-                ReportedById = 1
+                ReportedById = 1,
+                TroubleType = 1,
+                DamageType = 1,
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now
             };
 
             // Act
@@ -303,6 +316,184 @@ namespace LogisticsTroubleManagement.Tests.Core.Validators
 
             // Assert
             result.ShouldNotHaveValidationErrorFor(x => x.Priority);
+        }
+
+        [Fact]
+        public void Should_Pass_When_Enum_Values_Are_Valid()
+        {
+            // Arrange
+            var dto = new CreateIncidentDto
+            {
+                Title = "配送遅延トラブル",
+                Description = "商品の配送が予定より2日遅れている",
+                Category = "配送",
+                Priority = Priority.Medium,
+                ReportedById = 1,
+                TroubleType = 1, // 有効なEnum値
+                DamageType = 1,  // 有効なEnum値
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now
+            };
+
+            // Act
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, new ValidationContext(dto), validationResults, true);
+
+            // Assert
+            Assert.True(isValid);
+            Assert.Empty(validationResults);
+        }
+
+        [Fact]
+        public void Should_Fail_When_TroubleType_Is_Invalid()
+        {
+            // Arrange
+            var dto = new CreateIncidentDto
+            {
+                Title = "配送遅延トラブル",
+                Description = "商品の配送が予定より2日遅れている",
+                Category = "配送",
+                Priority = Priority.Medium,
+                ReportedById = 1,
+                TroubleType = 999, // 無効なEnum値
+                DamageType = 1,
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now
+            };
+
+            // Act
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, new ValidationContext(dto), validationResults, true);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Contains(validationResults, vr => vr.MemberNames.Contains("TroubleType"));
+            Assert.Contains(validationResults, vr => vr.ErrorMessage.Contains("トラブル種類の値 '999' は無効です。"));
+        }
+
+        [Fact]
+        public void Should_Fail_When_DamageType_Is_Invalid()
+        {
+            // Arrange
+            var dto = new CreateIncidentDto
+            {
+                Title = "配送遅延トラブル",
+                Description = "商品の配送が予定より2日遅れている",
+                Category = "配送",
+                Priority = Priority.Medium,
+                ReportedById = 1,
+                TroubleType = 1,
+                DamageType = 999, // 無効なEnum値
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now
+            };
+
+            // Act
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, new ValidationContext(dto), validationResults, true);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Contains(validationResults, vr => vr.MemberNames.Contains("DamageType"));
+            Assert.Contains(validationResults, vr => vr.ErrorMessage.Contains("損傷種類の値 '999' は無効です。"));
+        }
+
+        [Fact]
+        public void Should_Fail_When_DefectiveItems_Exceeds_TotalShipments()
+        {
+            // Arrange
+            var dto = new CreateIncidentDto
+            {
+                Title = "配送遅延トラブル",
+                Description = "商品の配送が予定より2日遅れている",
+                Category = "配送",
+                Priority = Priority.Medium,
+                ReportedById = 1,
+                TroubleType = 1,
+                DamageType = 1,
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                TotalShipments = 10,
+                DefectiveItems = 15, // TotalShipmentsを超える
+                OccurrenceDate = DateTime.Now
+            };
+
+            // Act
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, new ValidationContext(dto), validationResults, true);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Contains(validationResults, vr => vr.MemberNames.Contains("DefectiveItems"));
+            Assert.Contains(validationResults, vr => vr.ErrorMessage.Contains("不良品数は出荷総数以下である必要があります。"));
+        }
+
+        [Fact]
+        public void Should_Fail_When_EffectivenessStatus_Implemented_Without_EffectivenessDate()
+        {
+            // Arrange
+            var dto = new CreateIncidentDto
+            {
+                Title = "配送遅延トラブル",
+                Description = "商品の配送が予定より2日遅れている",
+                Category = "配送",
+                Priority = Priority.Medium,
+                ReportedById = 1,
+                TroubleType = 1,
+                DamageType = 1,
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now,
+                EffectivenessStatus = EffectivenessStatus.Implemented, // 実施済み
+                EffectivenessDate = null // 日付なし
+            };
+
+            // Act
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, new ValidationContext(dto), validationResults, true);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Contains(validationResults, vr => vr.MemberNames.Contains("EffectivenessDate"));
+            Assert.Contains(validationResults, vr => vr.ErrorMessage.Contains("有効性評価が実施済みの場合、有効性確認日は必須です。"));
+        }
+
+        [Fact]
+        public void Should_Pass_When_EffectivenessStatus_Implemented_With_EffectivenessDate()
+        {
+            // Arrange
+            var dto = new CreateIncidentDto
+            {
+                Title = "配送遅延トラブル",
+                Description = "商品の配送が予定より2日遅れている",
+                Category = "配送",
+                Priority = Priority.Medium,
+                ReportedById = 1,
+                TroubleType = 1,
+                DamageType = 1,
+                Warehouse = 1,
+                ShippingCompany = 1,
+                IncidentDetails = "配送トラブルの詳細",
+                OccurrenceDate = DateTime.Now,
+                EffectivenessStatus = EffectivenessStatus.Implemented, // 実施済み
+                EffectivenessDate = DateTime.Now // 日付あり
+            };
+
+            // Act
+            var validationResults = new List<ValidationResult>();
+            var isValid = Validator.TryValidateObject(dto, new ValidationContext(dto), validationResults, true);
+
+            // Assert
+            Assert.True(isValid);
+            Assert.Empty(validationResults);
         }
     }
 }

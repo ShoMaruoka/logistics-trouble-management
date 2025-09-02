@@ -1,4 +1,6 @@
 using LogisticsTroubleManagement.Domain.Enums;
+using LogisticsTroubleManagement.Core.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace LogisticsTroubleManagement.Core.DTOs;
 
@@ -11,7 +13,9 @@ public class UpdateIncidentDto
     public IncidentStatus Status { get; set; }
     
     // 物流特化項目
+    [EnumValue(typeof(TroubleType))]
     public int? TroubleType { get; set; }
+    [EnumValue(typeof(DamageType))]
     public int? DamageType { get; set; }
     public int? Warehouse { get; set; }
     public int? ShippingCompany { get; set; }

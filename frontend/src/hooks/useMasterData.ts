@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { 
   TroubleType, 
@@ -15,38 +15,38 @@ export function useMasterData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchMasterData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchMasterData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const [
-          troubleTypesData,
-          damageTypesData,
-          warehousesData,
-          shippingCompaniesData
-        ] = await Promise.all([
-          apiClient.getActiveTroubleTypes(),
-          apiClient.getActiveDamageTypes(),
-          apiClient.getActiveWarehouses(),
-          apiClient.getActiveShippingCompanies()
-        ]);
+      const [
+        troubleTypesData,
+        damageTypesData,
+        warehousesData,
+        shippingCompaniesData
+      ] = await Promise.all([
+        apiClient.getActiveTroubleTypes(),
+        apiClient.getActiveDamageTypes(),
+        apiClient.getActiveWarehouses(),
+        apiClient.getActiveShippingCompanies()
+      ]);
 
-        setTroubleTypes(troubleTypesData);
-        setDamageTypes(damageTypesData);
-        setWarehouses(warehousesData);
-        setShippingCompanies(shippingCompaniesData);
-      } catch (err) {
-        setError('マスタデータの取得に失敗しました');
-        console.error('マスタデータ取得エラー:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMasterData();
+      setTroubleTypes(troubleTypesData);
+      setDamageTypes(damageTypesData);
+      setWarehouses(warehousesData);
+      setShippingCompanies(shippingCompaniesData);
+    } catch (err) {
+      setError('マスタデータの取得に失敗しました');
+      console.error('マスタデータ取得エラー:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchMasterData();
+  }, [fetchMasterData]);
 
   return {
     troubleTypes,
@@ -54,6 +54,7 @@ export function useMasterData() {
     warehouses,
     shippingCompanies,
     loading,
-    error
+    error,
+    refetch: fetchMasterData
   };
 }

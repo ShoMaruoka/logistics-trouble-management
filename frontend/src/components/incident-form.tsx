@@ -13,6 +13,51 @@ import type {
   EffectivenessStatus 
 } from "@/lib/types";
 
+// 数値入力のバリデーション関数
+const validateNumericInput = (value: string, min: number = 0, max: number = Number.MAX_SAFE_INTEGER): number => {
+  // 入力値をトリム
+  const trimmedValue = value.trim();
+  
+  // 空文字列の場合は0を返す
+  if (trimmedValue === '') {
+    return 0;
+  }
+  
+  // 10進数としてパース
+  const parsedValue = parseInt(trimmedValue, 10);
+  
+  // 数値として有効かチェック
+  if (!Number.isFinite(parsedValue) || !Number.isInteger(parsedValue)) {
+    return 0;
+  }
+  
+  // 範囲チェックとクリッピング
+  if (parsedValue < min) {
+    return min;
+  }
+  
+  if (parsedValue > max) {
+    return max;
+  }
+  
+  return parsedValue;
+};
+
+// マスタデータIDの検証関数
+const validateMasterDataId = (id: any): boolean => {
+  return id != null && id !== undefined && Number.isInteger(id) && id > 0;
+};
+
+// 有効なIDを持つ最初のマスタデータ要素を取得する関数
+const getFirstValidId = <T extends { id: any }>(items: T[]): number | null => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return null;
+  }
+  
+  const validItem = items.find(item => validateMasterDataId(item?.id));
+  return validItem ? validItem.id : null;
+};
+
 interface IncidentFormProps {
   incident?: Incident | null;
   onSubmit: (data: CreateIncidentDto | UpdateIncidentDto) => void;
@@ -47,6 +92,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
     preventionMeasures: '', // 再発防止策
     effectivenessDate: '', // 有効性確認日
     effectivenessComment: '', // 有効性確認コメント
+    hasMasterDataError: false, // マスタデータエラーを追加
   });
 
   React.useEffect(() => {
@@ -74,6 +120,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         preventionMeasures: incident.preventionMeasures || '',
         effectivenessDate: incident.effectivenessDate ? new Date(incident.effectivenessDate).toISOString().split('T')[0] : '',
         effectivenessComment: incident.effectivenessComment || '',
+        hasMasterDataError: false, // 編集時はエラーをリセット
       });
     } else {
       // 新規作成時はフォームをリセット
@@ -100,6 +147,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         preventionMeasures: '',
         effectivenessDate: '',
         effectivenessComment: '',
+        hasMasterDataError: false, // 新規作成時はエラーをリセット
       });
     }
   }, [incident]);
@@ -108,15 +156,57 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
   React.useEffect(() => {
     if (!masterDataLoading && troubleTypes.length > 0 && damageTypes.length > 0 && warehouses.length > 0 && shippingCompanies.length > 0) {
       if (!incident) {
-        // 新規作成時は最初のマスタデータを選択
+        try {
+          // 新規作成時は有効なIDを持つ最初のマスタデータを選択
+          const validTroubleTypeId = getFirstValidId(troubleTypes);
+          const validDamageTypeId = getFirstValidId(damageTypes);
+          const validWarehouseId = getFirstValidId(warehouses);
+          const validShippingCompanyId = getFirstValidId(shippingCompanies);
+          
+          // 検証されたIDのみを設定
+          setFormData(prev => ({
+            ...prev,
+            troubleTypeId: validTroubleTypeId || 0,
+            damageTypeId: validDamageTypeId || 0,
+            warehouseId: validWarehouseId || 0,
+            shippingCompanyId: validShippingCompanyId || 0,
+            hasMasterDataError: false, // エラーフラグをリセット
+          }));
+          
+          // デバッグ用ログ（開発環境のみ）
+          if (process.env.NODE_ENV === 'development') {
+            console.log('マスタデータID設定完了:', {
+              troubleTypeId: validTroubleTypeId,
+              damageTypeId: validDamageTypeId,
+              warehouseId: validWarehouseId,
+              shippingCompanyId: validShippingCompanyId
+            });
+          }
+        } catch (error) {
+          console.error('マスタデータID設定中にエラーが発生しました:', error);
+          // エラーが発生した場合はデフォルト値（0）を設定
+          setFormData(prev => ({
+            ...prev,
+            troubleTypeId: 0,
+            damageTypeId: 0,
+            warehouseId: 0,
+            shippingCompanyId: 0,
+            hasMasterDataError: true, // エラーフラグを設定
+          }));
+        }
+      } else {
+        // 編集時もマスタデータが正常に読み込まれている場合はエラーフラグをリセット
         setFormData(prev => ({
           ...prev,
-          troubleTypeId: troubleTypes[0].id,
-          damageTypeId: damageTypes[0].id,
-          warehouseId: warehouses[0].id,
-          shippingCompanyId: shippingCompanies[0].id,
+          hasMasterDataError: false,
         }));
       }
+    } else {
+      // マスタデータが読み込まれていない場合はエラーフラグを設定
+      setFormData(prev => ({
+        ...prev,
+        hasMasterDataError: true,
+      }));
     }
   }, [masterDataLoading, troubleTypes, damageTypes, warehouses, shippingCompanies, incident]);
 
@@ -126,9 +216,57 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
     // カテゴリを自動生成（トラブル種類 + 損傷種類）
     const troubleType = troubleTypes.find(t => t.id === formData.troubleTypeId);
     const damageType = damageTypes.find(d => d.id === formData.damageTypeId);
-    const troubleTypeLabel = troubleType?.name || '不明';
-    const damageTypeLabel = damageType?.name || '不明';
-    const autoCategory = `${troubleTypeLabel} - ${damageTypeLabel}`;
+    
+    // データ整合性チェック
+    let hasMissingMasterData = false;
+    let missingDataWarnings: string[] = [];
+    
+    if (!troubleType) {
+      hasMissingMasterData = true;
+      missingDataWarnings.push('トラブル種類');
+      console.warn('トラブル種類のマスタデータが見つかりません。ID:', formData.troubleTypeId);
+    }
+    
+    if (!damageType) {
+      hasMissingMasterData = true;
+      missingDataWarnings.push('損傷種類');
+      console.warn('損傷種類のマスタデータが見つかりません。ID:', formData.damageTypeId);
+    }
+    
+    // 曖昧性のないラベルを使用
+    const troubleTypeLabel = troubleType?.name || '未設定';
+    const damageTypeLabel = damageType?.name || '未設定';
+    
+    // autoCategory構築時の曖昧な値の連結を回避
+    let autoCategory: string;
+    if (troubleType && damageType) {
+      autoCategory = `${troubleTypeLabel} - ${damageTypeLabel}`;
+    } else if (troubleType) {
+      autoCategory = `${troubleTypeLabel} - 損傷種類未設定`;
+    } else if (damageType) {
+      autoCategory = `トラブル種類未設定 - ${damageTypeLabel}`;
+    } else {
+      autoCategory = 'カテゴリ未設定';
+    }
+    
+    // マスタデータが不足している場合は警告を表示
+    if (hasMissingMasterData) {
+      console.warn(`マスタデータが不足しています: ${missingDataWarnings.join(', ')}`);
+      // フォームエラーフラグを設定（必要に応じてUIに表示）
+      setFormData(prev => ({ ...prev, hasMasterDataError: true }));
+      
+      // ユーザーに確認を求める
+      const confirmSubmit = window.confirm(
+        `マスタデータが不足しています（${missingDataWarnings.join(', ')}）。\n` +
+        'カテゴリが正しく生成されない可能性がありますが、送信を続行しますか？'
+      );
+      
+      if (!confirmSubmit) {
+        return; // 送信をキャンセル
+      }
+    } else {
+      setFormData(prev => ({ ...prev, hasMasterDataError: false }));
+    }
     
     onSubmit({
       ...formData,
@@ -176,6 +314,26 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
 
   return (
          <form onSubmit={handleSubmit} className="space-y-4 bg-gray-100 p-4 rounded-lg w-full">
+      {/* マスタデータエラーメッセージ */}
+      {formData.hasMasterDataError && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">マスタデータの警告</h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>一部のマスタデータが見つかりません。カテゴリが正しく生成されない可能性があります。</p>
+                <p className="mt-1">詳細はブラウザのコンソールを確認してください。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                  {/* 左列: 発生経緯・トラブル詳細 */}
          <div className="space-y-4">
@@ -293,7 +451,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
                   id="totalShipments"
                   type="number"
                   value={formData.totalShipments}
-                  onChange={(e) => setFormData(prev => ({ ...prev, totalShipments: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, totalShipments: validateNumericInput(e.target.value) }))}
                   placeholder="0"
                   className="border-gray-300 focus:ring-2 focus:ring-logistics-blue"
                 />
@@ -304,7 +462,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
                   id="defectiveItems"
                   type="number"
                   value={formData.defectiveItems}
-                  onChange={(e) => setFormData(prev => ({ ...prev, defectiveItems: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, defectiveItems: validateNumericInput(e.target.value) }))}
                   placeholder="0"
                   className="border-gray-300 focus:ring-2 focus:ring-logistics-blue"
                 />
@@ -557,7 +715,12 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
            <Button 
              type="submit" 
              disabled={loading}
-             className="bg-logistics-blue hover:bg-logistics-blue/90 text-white"
+             className={`${
+               formData.hasMasterDataError 
+                 ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                 : 'bg-logistics-blue hover:bg-logistics-blue/90 text-white'
+             }`}
+             title={formData.hasMasterDataError ? 'マスタデータエラーがありますが、送信は可能です' : ''}
            >
              {loading ? '保存中...' : (incident ? '保存' : '作成')}
            </Button>

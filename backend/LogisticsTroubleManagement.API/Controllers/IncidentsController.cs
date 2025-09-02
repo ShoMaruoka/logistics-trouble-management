@@ -16,31 +16,25 @@ public class IncidentsController : ControllerBase
     private readonly IIncidentRepository _incidentRepository;
     private readonly IUserRepository _userRepository;
     private readonly IncidentDomainService _incidentDomainService;
-    private readonly ITroubleTypeRepository _troubleTypeRepository;
-    private readonly IDamageTypeRepository _damageTypeRepository;
-    private readonly IWarehouseRepository _warehouseRepository;
-    private readonly IShippingCompanyRepository _shippingCompanyRepository;
+    private readonly IMasterDataResolverService _masterDataResolver;
     private readonly ILogger<IncidentsController> _logger;
+
+    // 期待される解決時間の定数（デフォルト3日）
+    private static readonly TimeSpan DefaultExpectedResolutionTime = TimeSpan.FromDays(3);
 
     public IncidentsController(
         IUnitOfWork unitOfWork,
         IIncidentRepository incidentRepository,
         IUserRepository userRepository,
         IncidentDomainService incidentDomainService,
-        ITroubleTypeRepository troubleTypeRepository,
-        IDamageTypeRepository damageTypeRepository,
-        IWarehouseRepository warehouseRepository,
-        IShippingCompanyRepository shippingCompanyRepository,
+        IMasterDataResolverService masterDataResolver,
         ILogger<IncidentsController> logger)
     {
         _unitOfWork = unitOfWork;
         _incidentRepository = incidentRepository;
         _userRepository = userRepository;
         _incidentDomainService = incidentDomainService;
-        _troubleTypeRepository = troubleTypeRepository;
-        _damageTypeRepository = damageTypeRepository;
-        _warehouseRepository = warehouseRepository;
-        _shippingCompanyRepository = shippingCompanyRepository;
+        _masterDataResolver = masterDataResolver;
         _logger = logger;
     }
 
@@ -101,8 +95,7 @@ public class IncidentsController : ControllerBase
 
             if (searchDto.IsOverdue.HasValue && searchDto.IsOverdue.Value)
             {
-                var expectedResolutionTime = TimeSpan.FromDays(3); // デフォルト3日
-                predicates.Add(i => _incidentDomainService.IsIncidentOverdue(i, expectedResolutionTime));
+                predicates.Add(i => _incidentDomainService.IsIncidentOverdue(i, DefaultExpectedResolutionTime));
             }
 
             // 複数の条件をANDで結合
@@ -138,7 +131,7 @@ public class IncidentsController : ControllerBase
                 searchDto.PageSize);
 
             // DTOに変換
-            var incidentDtos = await ConvertToDtoAsync(incidents.ToList());
+            var incidentDtos = await ConvertToDtoBatchAsync(incidents.ToList());
 
             var result = new PagedResultDto<IncidentDto>(
                 incidentDtos,
@@ -236,6 +229,31 @@ public class IncidentsController : ControllerBase
                 }
             }
 
+            // マスタデータの参照存在チェック
+            var troubleType = await _masterDataResolver.GetTroubleTypeAsync(createDto.TroubleType);
+            if (troubleType == null)
+            {
+                return BadRequest(new { Error = $"指定されたトラブル種類（ID: {createDto.TroubleType}）が存在しません。" });
+            }
+
+            var damageType = await _masterDataResolver.GetDamageTypeAsync(createDto.DamageType);
+            if (damageType == null)
+            {
+                return BadRequest(new { Error = $"指定された損傷種類（ID: {createDto.DamageType}）が存在しません。" });
+            }
+
+            var warehouse = await _masterDataResolver.GetWarehouseAsync(createDto.Warehouse);
+            if (warehouse == null)
+            {
+                return BadRequest(new { Error = $"指定された出荷元倉庫（ID: {createDto.Warehouse}）が存在しません。" });
+            }
+
+            var shippingCompany = await _masterDataResolver.GetShippingCompanyAsync(createDto.ShippingCompany);
+            if (shippingCompany == null)
+            {
+                return BadRequest(new { Error = $"指定された運送会社（ID: {createDto.ShippingCompany}）が存在しません。" });
+            }
+
             // インシデント作成
             var newIncident = Incident.Create(
                 createDto.Title,
@@ -310,6 +328,31 @@ public class IncidentsController : ControllerBase
             if (updateDto.TroubleType.HasValue && updateDto.DamageType.HasValue && 
                 updateDto.Warehouse.HasValue && updateDto.ShippingCompany.HasValue)
             {
+                // マスタデータの参照存在チェック
+                var troubleType = await _masterDataResolver.GetTroubleTypeAsync(updateDto.TroubleType.Value);
+                if (troubleType == null)
+                {
+                    return BadRequest(new { Error = $"指定されたトラブル種類（ID: {updateDto.TroubleType.Value}）が存在しません。" });
+                }
+
+                var damageType = await _masterDataResolver.GetDamageTypeAsync(updateDto.DamageType.Value);
+                if (damageType == null)
+                {
+                    return BadRequest(new { Error = $"指定された損傷種類（ID: {updateDto.DamageType.Value}）が存在しません。" });
+                }
+
+                var warehouse = await _masterDataResolver.GetWarehouseAsync(updateDto.Warehouse.Value);
+                if (warehouse == null)
+                {
+                    return BadRequest(new { Error = $"指定された出荷元倉庫（ID: {updateDto.Warehouse.Value}）が存在しません。" });
+                }
+
+                var shippingCompany = await _masterDataResolver.GetShippingCompanyAsync(updateDto.ShippingCompany.Value);
+                if (shippingCompany == null)
+                {
+                    return BadRequest(new { Error = $"指定された運送会社（ID: {updateDto.ShippingCompany.Value}）が存在しません。" });
+                }
+
                 incident.UpdateLogisticsDetails(
                     updateDto.TroubleType.Value,
                     updateDto.DamageType.Value,
@@ -418,7 +461,7 @@ public class IncidentsController : ControllerBase
             _logger.LogInformation("ステータス別インシデント取得リクエスト: Status={Status}", status);
 
             var incidents = await _incidentRepository.GetByStatusAsync(status);
-            var incidentDtos = await ConvertToDtoAsync(incidents.ToList());
+            var incidentDtos = await ConvertToDtoBatchAsync(incidents.ToList());
 
             _logger.LogInformation("ステータス別インシデント取得成功: Status={Status}, Count={Count}", status, incidentDtos.Count());
             return Ok(incidentDtos);
@@ -439,7 +482,7 @@ public class IncidentsController : ControllerBase
             _logger.LogInformation("優先度別インシデント取得リクエスト: Priority={Priority}", priority);
 
             var incidents = await _incidentRepository.GetByPriorityAsync(priority);
-            var incidentDtos = await ConvertToDtoAsync(incidents.ToList());
+            var incidentDtos = await ConvertToDtoBatchAsync(incidents.ToList());
 
             _logger.LogInformation("優先度別インシデント取得成功: Priority={Priority}, Count={Count}", priority, incidentDtos.Count());
             return Ok(incidentDtos);
@@ -460,7 +503,7 @@ public class IncidentsController : ControllerBase
             _logger.LogInformation("アクティブインシデント取得リクエスト");
 
             var incidents = await _incidentRepository.GetActiveIncidentsAsync();
-            var incidentDtos = await ConvertToDtoAsync(incidents.ToList());
+            var incidentDtos = await ConvertToDtoBatchAsync(incidents.ToList());
 
             _logger.LogInformation("アクティブインシデント取得成功: Count={Count}", incidentDtos.Count());
             return Ok(incidentDtos);
@@ -481,7 +524,7 @@ public class IncidentsController : ControllerBase
             _logger.LogInformation("解決済みインシデント取得リクエスト");
 
             var incidents = await _incidentRepository.GetResolvedIncidentsAsync();
-            var incidentDtos = await ConvertToDtoAsync(incidents.ToList());
+            var incidentDtos = await ConvertToDtoBatchAsync(incidents.ToList());
 
             _logger.LogInformation("解決済みインシデント取得成功: Count={Count}", incidentDtos.Count());
             return Ok(incidentDtos);
@@ -502,12 +545,8 @@ public class IncidentsController : ControllerBase
             : null;
 
         // マスタ情報の取得
-        var troubleType = await _troubleTypeRepository.GetByIdAsync(incident.TroubleTypeId);
-        var damageType = await _damageTypeRepository.GetByIdAsync(incident.DamageTypeId);
-        var warehouse = await _warehouseRepository.GetByIdAsync(incident.WarehouseId);
-        var shippingCompany = await _shippingCompanyRepository.GetByIdAsync(incident.ShippingCompanyId);
-
-        var expectedResolutionTime = TimeSpan.FromDays(3); // デフォルト3日
+        var (troubleType, damageType, warehouse, shippingCompany) = await _masterDataResolver.GetIncidentMasterDataAsync(
+            incident.TroubleTypeId, incident.DamageTypeId, incident.WarehouseId, incident.ShippingCompanyId);
 
         return new IncidentDto
         {
@@ -548,7 +587,7 @@ public class IncidentsController : ControllerBase
             CreatedAt = incident.CreatedAt,
             UpdatedAt = incident.UpdatedAt,
             AttachmentCount = incident.Attachments.Count,
-            IsOverdue = _incidentDomainService.IsIncidentOverdue(incident, expectedResolutionTime),
+            IsOverdue = _incidentDomainService.IsIncidentOverdue(incident, DefaultExpectedResolutionTime),
             ResolutionTime = incident.IsResolved() ? incident.GetResolutionTime() : null
         };
     }
@@ -561,5 +600,93 @@ public class IncidentsController : ControllerBase
             dtos.Add(await ConvertToDtoAsync(incident));
         }
         return dtos;
+    }
+
+    /// <summary>
+    /// バッチ処理版のDTO変換（N+1問題を解決）
+    /// </summary>
+    private async Task<IEnumerable<IncidentDto>> ConvertToDtoBatchAsync(IEnumerable<Incident> incidents)
+    {
+        if (!incidents.Any())
+        {
+            return Enumerable.Empty<IncidentDto>();
+        }
+
+        try
+        {
+            // マスタデータを一括取得
+            var masterDataBatch = await _masterDataResolver.GetIncidentMasterDataBatchAsync(incidents);
+            
+            var dtos = new List<IncidentDto>();
+
+            foreach (var incident in incidents)
+            {
+                // 辞書からマスタデータを取得（DBクエリなし）
+                masterDataBatch.TroubleTypes.TryGetValue(incident.TroubleTypeId, out var troubleType);
+                masterDataBatch.DamageTypes.TryGetValue(incident.DamageTypeId, out var damageType);
+                masterDataBatch.Warehouses.TryGetValue(incident.WarehouseId, out var warehouse);
+                masterDataBatch.ShippingCompanies.TryGetValue(incident.ShippingCompanyId, out var shippingCompany);
+                masterDataBatch.Users.TryGetValue(incident.ReportedById, out var reportedBy);
+                
+                User? assignedTo = null;
+                if (incident.AssignedToId.HasValue)
+                {
+                    masterDataBatch.Users.TryGetValue(incident.AssignedToId.Value, out assignedTo);
+                }
+
+                var dto = new IncidentDto
+                {
+                    Id = incident.Id,
+                    Title = incident.Title,
+                    Description = incident.Description,
+                    Status = incident.Status,
+                    Priority = incident.Priority,
+                    Category = incident.Category,
+                    TroubleTypeId = incident.TroubleTypeId,
+                    DamageTypeId = incident.DamageTypeId,
+                    WarehouseId = incident.WarehouseId,
+                    ShippingCompanyId = incident.ShippingCompanyId,
+                    EffectivenessStatus = incident.EffectivenessStatus,
+                    // 表示用のマスタ情報
+                    TroubleTypeName = troubleType?.Name ?? "不明",
+                    TroubleTypeColor = troubleType?.Color ?? "#3B82F6",
+                    DamageTypeName = damageType?.Name ?? "不明",
+                    WarehouseName = warehouse?.Name ?? "不明",
+                    ShippingCompanyName = shippingCompany?.Name ?? "不明",
+                    IncidentDetails = incident.IncidentDetails,
+                    TotalShipments = incident.TotalShipments,
+                    DefectiveItems = incident.DefectiveItems,
+                    OccurrenceDate = incident.OccurrenceDate,
+                    OccurrenceLocation = incident.OccurrenceLocation,
+                    Summary = incident.Summary,
+                    Cause = incident.Cause,
+                    PreventionMeasures = incident.PreventionMeasures,
+                    EffectivenessDate = incident.EffectivenessDate,
+                    EffectivenessComment = incident.EffectivenessComment,
+                    ReportedById = incident.ReportedById,
+                    ReportedByName = reportedBy?.GetFullName() ?? "不明",
+                    AssignedToId = incident.AssignedToId,
+                    AssignedToName = assignedTo?.GetFullName(),
+                    ReportedDate = incident.ReportedDate,
+                    ResolvedDate = incident.ResolvedDate,
+                    Resolution = incident.Resolution,
+                    CreatedAt = incident.CreatedAt,
+                    UpdatedAt = incident.UpdatedAt,
+                    AttachmentCount = incident.Attachments.Count,
+                    IsOverdue = _incidentDomainService.IsIncidentOverdue(incident, DefaultExpectedResolutionTime),
+                    ResolutionTime = incident.IsResolved() ? incident.GetResolutionTime() : null
+                };
+
+                dtos.Add(dto);
+            }
+
+            return dtos;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "バッチDTO変換中にエラーが発生しました。フォールバックとして個別変換を使用します。");
+            // エラーが発生した場合は、既存の個別変換にフォールバック
+            return await ConvertToDtoAsync(incidents);
+        }
     }
 }

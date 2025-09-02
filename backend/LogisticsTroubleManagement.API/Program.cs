@@ -4,6 +4,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using LogisticsTroubleManagement.Infrastructure.Data;
 using LogisticsTroubleManagement.Infrastructure.Repositories;
+using LogisticsTroubleManagement.Infrastructure.Services;
 using LogisticsTroubleManagement.Domain.Repositories;
 using LogisticsTroubleManagement.Domain.Services;
 using LogisticsTroubleManagement.API.Middleware;
@@ -68,6 +69,9 @@ builder.Services.AddScoped<IShippingCompanyRepository, ShippingCompanyRepository
 
 // Add Domain Services
 builder.Services.AddScoped<IncidentDomainService>();
+
+// Add Master Data Resolver Service
+builder.Services.AddScoped<IMasterDataResolverService, MasterDataResolverService>();
 
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation();

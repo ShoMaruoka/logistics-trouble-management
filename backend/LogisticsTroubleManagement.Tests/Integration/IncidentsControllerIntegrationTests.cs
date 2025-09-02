@@ -64,6 +64,34 @@ namespace LogisticsTroubleManagement.Tests.Integration
         }
 
         [Fact(Skip = "データベースプロバイダー競合のため一時的にスキップ")]
+        public async Task GetIncidents_ShouldReturnValidPagedResult()
+        {
+            // Arrange
+            var query = "?page=1&pageSize=5";
+
+            // Act
+            var response = await _client.GetAsync($"/api/incidents{query}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var pagedResult = await response.Content.ReadFromJsonAsync<PagedResultDto<IncidentDto>>();
+            
+            // PagedResultDtoのプロパティ整合性を確認
+            Assert.NotNull(pagedResult);
+            Assert.Equal(1, pagedResult.Page); // pageNumberではなくpageプロパティ
+            Assert.Equal(5, pagedResult.PageSize);
+            Assert.True(pagedResult.TotalCount >= 0);
+            Assert.True(pagedResult.TotalPages >= 1);
+            Assert.NotNull(pagedResult.Items);
+            Assert.True(pagedResult.Items.Count() <= 5);
+            
+            // バックエンドレスポンスのプロパティ名が正しいことを確認
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            Assert.Contains("\"page\":", jsonContent);
+            Assert.DoesNotContain("\"pageNumber\":", jsonContent);
+        }
+
+        [Fact(Skip = "データベースプロバイダー競合のため一時的にスキップ")]
         public async Task GetIncident_WithValidId_ShouldReturnOk()
         {
             // Arrange

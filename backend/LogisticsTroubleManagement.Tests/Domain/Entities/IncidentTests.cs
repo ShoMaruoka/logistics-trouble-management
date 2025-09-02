@@ -37,6 +37,50 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         }
 
         [Fact]
+        public void Create_WithInvalidEnumInt_ShouldThrow()
+        {
+            // Arrange
+            var title = "テストインシデント";
+            var description = "テスト用のインシデント";
+            var category = "テスト";
+            var reportedById = 1;
+            var occurrenceDate = DateTime.UtcNow;
+            var priority = Priority.Medium;
+
+            // Act & Assert - 無効なTroubleType
+            var exception = Assert.Throws<ArgumentException>(() => 
+                Incident.Create(title, description, category, reportedById, 
+                    9999, (int)DomainEnums.DamageType.OtherDeliveryMistake, 
+                    (int)DomainEnums.Warehouse.WarehouseA, (int)DomainEnums.ShippingCompany.ATransport, 
+                    occurrenceDate, priority));
+            Assert.Contains("troubleTypeId", exception.Message);
+
+            // Act & Assert - 無効なDamageType
+            exception = Assert.Throws<ArgumentException>(() => 
+                Incident.Create(title, description, category, reportedById, 
+                    (int)DomainEnums.TroubleType.DeliveryTrouble, 9999, 
+                    (int)DomainEnums.Warehouse.WarehouseA, (int)DomainEnums.ShippingCompany.ATransport, 
+                    occurrenceDate, priority));
+            Assert.Contains("damageTypeId", exception.Message);
+
+            // Act & Assert - 無効なWarehouse
+            exception = Assert.Throws<ArgumentException>(() => 
+                Incident.Create(title, description, category, reportedById, 
+                    (int)DomainEnums.TroubleType.DeliveryTrouble, (int)DomainEnums.DamageType.OtherDeliveryMistake, 
+                    9999, (int)DomainEnums.ShippingCompany.ATransport, 
+                    occurrenceDate, priority));
+            Assert.Contains("warehouseId", exception.Message);
+
+            // Act & Assert - 無効なShippingCompany
+            exception = Assert.Throws<ArgumentException>(() => 
+                Incident.Create(title, description, category, reportedById, 
+                    (int)DomainEnums.TroubleType.DeliveryTrouble, (int)DomainEnums.DamageType.OtherDeliveryMistake, 
+                    (int)DomainEnums.Warehouse.WarehouseA, 9999, 
+                    occurrenceDate, priority));
+            Assert.Contains("shippingCompanyId", exception.Message);
+        }
+
+        [Fact]
         public void AssignTo_WithValidUserId_ShouldAssignIncident()
         {
             // Arrange
@@ -100,12 +144,10 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         public void IsOverdue_WhenOverdue_ShouldReturnTrue()
         {
             // Arrange
+            var reportedDate = DateTime.UtcNow.AddDays(-10); // 10日前の日付
             var incident = CreateTestIncident();
-            var expectedResolutionTime = TimeSpan.FromDays(7);
-            
-            // Use reflection to set private property for testing
-            var reportedDateProperty = typeof(Incident).GetProperty("ReportedDate");
-            reportedDateProperty?.SetValue(incident, DateTime.UtcNow.AddDays(-8));
+            incident.SetReportedDate(reportedDate);
+            var expectedResolutionTime = TimeSpan.FromDays(7); // 7日以内に解決すべき
 
             // Act
             var isOverdue = incident.IsOverdue(expectedResolutionTime);
@@ -132,23 +174,19 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         public void GetResolutionTime_WhenResolved_ShouldReturnResolutionTime()
         {
             // Arrange
-            var incident = CreateTestIncident();
             var reportedDate = DateTime.UtcNow.AddDays(-5);
-            var resolvedDate = DateTime.UtcNow.AddDays(-1);
+            var incident = CreateTestIncident();
+            incident.SetReportedDate(reportedDate);
             
-            // Use reflection to set private properties for testing
-            var reportedDateProperty = typeof(Incident).GetProperty("ReportedDate");
-            var resolvedDateProperty = typeof(Incident).GetProperty("ResolvedDate");
-            
-            reportedDateProperty?.SetValue(incident, reportedDate);
-            resolvedDateProperty?.SetValue(incident, resolvedDate);
+            // Resolve the incident to set the resolved date
+            incident.Resolve("テスト用の解決策");
 
             // Act
             var resolutionTime = incident.GetResolutionTime();
 
             // Assert
             Assert.NotEqual(TimeSpan.Zero, resolutionTime);
-            Assert.Equal(4, resolutionTime.Days);
+            Assert.Equal(5, resolutionTime.Days); // 5日前から現在まで
         }
 
         [Fact]

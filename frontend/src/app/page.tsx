@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { PlusCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/lib/hooks";
 
 export default function Home() {
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
 
@@ -57,8 +59,8 @@ export default function Home() {
         reportedById: 1 // 仮のユーザーID
       });
       setIsDialogOpen(false);
-      // ページをリロードしてデータを更新
-      window.location.reload();
+      // サーバーコンポーネントを再検証
+      router.refresh();
     } catch (error) {
       console.error('物流トラブル作成エラー:', error);
     }
@@ -91,8 +93,8 @@ export default function Home() {
       });
       setIsDialogOpen(false);
       setEditingIncident(null);
-      // ページをリロードしてデータを更新
-      window.location.reload();
+      // サーバーコンポーネントを再検証
+      router.refresh();
     } catch (error) {
       console.error('物流トラブル更新エラー:', error);
     }
@@ -111,8 +113,8 @@ export default function Home() {
     if (confirm('この物流トラブルを削除しますか？')) {
       try {
         await deleteIncident(incident.id);
-        // ページをリロードしてデータを更新
-        window.location.reload();
+        // サーバーコンポーネントを再検証
+        router.refresh();
       } catch (error) {
         console.error('物流トラブル削除エラー:', error);
       }
