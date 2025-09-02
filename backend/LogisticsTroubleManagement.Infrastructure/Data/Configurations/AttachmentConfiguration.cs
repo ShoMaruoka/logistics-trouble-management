@@ -27,7 +27,7 @@ public class AttachmentConfiguration : IEntityTypeConfiguration<Attachment>
 			.HasDefaultValueSql("GETUTCDATE()")
 			.IsRequired();
 		builder.Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
-		builder.Property(a => a.UpdatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
+		builder.Property(a => a.UpdatedAt).IsRequired(false);
 
 		builder.HasOne(a => a.Incident)
 			.WithMany(i => i.Attachments)

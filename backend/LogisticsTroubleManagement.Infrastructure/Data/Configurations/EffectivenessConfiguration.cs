@@ -31,7 +31,7 @@ public class EffectivenessConfiguration : IEntityTypeConfiguration<Effectiveness
 			.HasDefaultValueSql("GETUTCDATE()")
 			.IsRequired();
 		builder.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
-		builder.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
+		builder.Property(e => e.UpdatedAt).IsRequired(false);
 
 		builder.HasOne(e => e.Incident)
 			.WithMany(i => i.Effectiveness)

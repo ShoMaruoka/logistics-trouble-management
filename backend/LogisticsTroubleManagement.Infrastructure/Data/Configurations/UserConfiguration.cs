@@ -56,7 +56,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 			.HasDefaultValueSql("GETUTCDATE()")
 			.IsRequired();
 		builder.Property(u => u.UpdatedAt)
-			.HasDefaultValueSql("GETUTCDATE()").IsRequired();
+			.IsRequired(false);
 
 		builder.HasMany(u => u.ReportedIncidents)
 			.WithOne(i => i.ReportedBy)

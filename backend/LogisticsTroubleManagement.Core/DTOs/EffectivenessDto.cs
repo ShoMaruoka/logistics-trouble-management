@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace LogisticsTroubleManagement.Core.DTOs;
 
 public class EffectivenessDto
@@ -12,7 +14,11 @@ public class EffectivenessDto
     public string Description { get; set; } = string.Empty;
     public DateTime MeasuredAt { get; set; }
     public string MeasuredBy { get; set; } = string.Empty;
+    
+    // サーバーサイドで管理されるフィールド - クライアント入力から保護
+    [JsonIgnore]
     public DateTime CreatedAt { get; set; }
+    [JsonIgnore]
     public DateTime UpdatedAt { get; set; }
 }
 

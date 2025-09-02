@@ -11,6 +11,9 @@ using LogisticsTroubleManagement.API.Middleware;
 using LogisticsTroubleManagement.API.Filters;
 using Microsoft.AspNetCore.Mvc;
 using LogisticsTroubleManagement.Core.Validators;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +46,31 @@ builder.Services.AddSwaggerGen(c =>
         Title = "物流トラブル管理システム API",
         Version = "v1",
         Description = "物流トラブル管理システムのWeb API"
+    });
+    
+    // JWT認証の設定をSwaggerに追加
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
     });
 });
 
@@ -94,6 +122,40 @@ builder.Services.AddCors(options =>
     });
 });
 
+// 認証・認可サービスの設定
+var requireAuth = builder.Configuration.GetValue<bool>("Authentication:RequireAuth", false);
+
+if (requireAuth)
+{
+    // JWT認証の設定
+    var jwtSettings = builder.Configuration.GetSection("Authentication:Jwt");
+    var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "your-secret-key-here");
+    
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSettings["Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+    
+    builder.Services.AddAuthorization();
+}
+
 var app = builder.Build();
 
 // Global exception handling
@@ -114,11 +176,21 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
-// 短期対応: 認証・認可を一時的に無効化
-// app.UseAuthentication();
-// app.UseAuthorization();
-
-app.MapControllers();
+// 条件付き認証・認可の適用
+if (requireAuth)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+    
+    // APIエンドポイントグループに認証を適用
+    app.MapControllers()
+        .RequireAuthorization();
+}
+else
+{
+    // 認証が無効な場合は、認証なしでコントローラーをマップ
+    app.MapControllers();
+}
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))

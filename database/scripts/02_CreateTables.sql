@@ -37,7 +37,7 @@ BEGIN
         [ResolvedDate] DATETIME2 NULL,
         [Resolution] NVARCHAR(MAX) NULL,
         [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-        [UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+        [UpdatedAt] DATETIME2 NULL,
         CONSTRAINT [FK_Incidents_ReportedBy] FOREIGN KEY ([ReportedBy]) REFERENCES [dbo].[Users]([Id]),
         CONSTRAINT [FK_Incidents_AssignedTo] FOREIGN KEY ([AssignedTo]) REFERENCES [dbo].[Users]([Id])
     );

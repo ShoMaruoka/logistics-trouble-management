@@ -1,4 +1,5 @@
 using LogisticsTroubleManagement.Domain.Enums;
+using System.Text.Json.Serialization;
 
 namespace LogisticsTroubleManagement.Core.DTOs;
 
@@ -44,8 +45,13 @@ public class IncidentDto
     public DateTime ReportedDate { get; set; }
     public DateTime? ResolvedDate { get; set; }
     public string? Resolution { get; set; }
+    
+    // サーバーサイドで管理されるフィールド - クライアント入力から保護
+    [JsonIgnore]
     public DateTime CreatedAt { get; set; }
+    [JsonIgnore]
     public DateTime UpdatedAt { get; set; }
+    
     public int AttachmentCount { get; set; }
     public bool IsOverdue { get; set; }
     public TimeSpan? ResolutionTime { get; set; }

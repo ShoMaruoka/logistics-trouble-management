@@ -15,7 +15,7 @@ CREATE TABLE TroubleTypes (
     SortOrder INT NOT NULL DEFAULT 0,           -- 表示順序
     IsActive BIT NOT NULL DEFAULT 1,            -- 有効フラグ
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    UpdatedAt DATETIME2 NULL
 );
 
 -- 2. DamageTypesテーブル（損傷種類マスタ）
@@ -27,7 +27,7 @@ CREATE TABLE DamageTypes (
     SortOrder INT NOT NULL DEFAULT 0,           -- 表示順序
     IsActive BIT NOT NULL DEFAULT 1,            -- 有効フラグ
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    UpdatedAt DATETIME2 NULL
 );
 
 -- 3. Warehousesテーブル（出荷元倉庫マスタ）
@@ -40,7 +40,7 @@ CREATE TABLE Warehouses (
     SortOrder INT NOT NULL DEFAULT 0,           -- 表示順序
     IsActive BIT NOT NULL DEFAULT 1,            -- 有効フラグ
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    UpdatedAt DATETIME2 NULL
 );
 
 -- 4. ShippingCompaniesテーブル（運送会社マスタ）
@@ -53,7 +53,7 @@ CREATE TABLE ShippingCompanies (
     SortOrder INT NOT NULL DEFAULT 0,           -- 表示順序
     IsActive BIT NOT NULL DEFAULT 1,            -- 有効フラグ
     CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+    UpdatedAt DATETIME2 NULL
 );
 
 -- インデックスの作成

@@ -24,7 +24,7 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 		builder.Property(a => a.IpAddress).IsRequired(false).HasMaxLength(45);
 		builder.Property(a => a.UserAgent).IsRequired(false).HasMaxLength(500);
 		builder.Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
-		builder.Property(a => a.UpdatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
+		builder.Property(a => a.UpdatedAt).IsRequired(false);
 
 		builder.HasOne(a => a.User)
 			.WithMany(u => u.AuditLogs)

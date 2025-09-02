@@ -34,7 +34,7 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
 			.IsRequired(false);
 
 		builder.Property(i => i.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
-		builder.Property(i => i.UpdatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
+		builder.Property(i => i.UpdatedAt).IsRequired(false);
 
 		builder.HasOne(i => i.ReportedBy)
 			.WithMany(u => u.ReportedIncidents)
