@@ -38,10 +38,10 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
   return (
     <div className={`w-full ${className}`}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
       <div className="relative">
         <div className="flex items-center space-x-2">
           <div
@@ -54,12 +54,12 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             value={value}
             onChange={handleCustomColorChange}
             placeholder="#000000"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         
         {isOpen && (
-          <div className="absolute z-10 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+          <div className="absolute z-10 mt-2 p-3 bg-white border border-gray-300 rounded-md shadow-lg">
             <div className="grid grid-cols-6 gap-2 mb-3">
               {PRESET_COLORS.map((color) => (
                 <button
@@ -72,14 +72,14 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 />
               ))}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-gray-500">
               プリセットカラーをクリックするか、HEX値を直接入力してください
             </div>
           </div>
         )}
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="mt-1 text-sm text-red-600">{error}</p>
       )}
     </div>
   );
