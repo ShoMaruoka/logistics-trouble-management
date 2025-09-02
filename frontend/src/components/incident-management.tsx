@@ -9,17 +9,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IncidentList } from "@/components/incident-list";
-import type { IncidentDto, IncidentSearchDto } from "@/lib/api-types";
+import type { Incident, IncidentSearchDto } from "@/lib/types";
 import { useIncidents } from "@/lib/hooks";
 
 interface IncidentManagementProps {
-  onEdit: (incident: IncidentDto) => void;
-  onDelete: (incident: IncidentDto) => void;
+  onEdit: (incident: Incident) => void;
+  onDelete: (incident: Incident) => void;
 }
 
 export function IncidentManagement({ onEdit, onDelete }: IncidentManagementProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof IncidentDto; direction: 'ascending' | 'descending' } | null>({ key: 'occurrenceDate', direction: 'descending' });
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Incident; direction: 'ascending' | 'descending' } | null>({ key: 'occurrenceDate', direction: 'descending' });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
 
@@ -34,7 +34,7 @@ export function IncidentManagement({ onEdit, onDelete }: IncidentManagementProps
 
   const { data: incidentsData, loading: incidentsLoading, error: incidentsError, refetch: refetchIncidents } = useIncidents(incidentSearchParams);
 
-  const handleSort = (key: keyof IncidentDto) => {
+  const handleSort = (key: keyof Incident) => {
     setSortConfig(current => {
       if (current?.key === key) {
         return {

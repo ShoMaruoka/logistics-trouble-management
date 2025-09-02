@@ -5,6 +5,8 @@ using LogisticsTroubleManagement.Infrastructure.Repositories;
 using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.ValueObjects;
+using DomainEnums = LogisticsTroubleManagement.Domain.Enums;
+using System.Reflection;
 
 namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
 {
@@ -184,8 +186,9 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
             var normalIncident = CreateTestIncident("通常");
 
             // Use reflection to set private property for testing
-            var reportedDateProperty = typeof(Incident).GetProperty("ReportedDate");
-            reportedDateProperty?.SetValue(overdueIncident, DateTime.UtcNow.AddDays(-8));
+            var reportedDateProperty = typeof(Incident).GetProperty("ReportedDate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var setter = reportedDateProperty?.GetSetMethod(true);
+            setter?.Invoke(overdueIncident, new object[] { DateTime.UtcNow.AddDays(-8) });
 
             var incidents = new List<Incident> { overdueIncident, normalIncident };
             await _context.Incidents.AddRangeAsync(incidents);
@@ -242,8 +245,8 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
         private static Incident CreateTestIncident(string title = "テストインシデント", Priority priority = Priority.Medium)
         {
             return Incident.Create(title, "テスト用のインシデント", "テスト", 1, 
-                TroubleType.ProductTrouble, DamageType.DamageOrContamination, 
-                Warehouse.WarehouseA, ShippingCompany.InHouse, DateTime.UtcNow, priority);
+                (int)DomainEnums.TroubleType.ProductTrouble, (int)DomainEnums.DamageType.DamageOrContamination, 
+                (int)DomainEnums.Warehouse.WarehouseA, (int)DomainEnums.ShippingCompany.InHouse, DateTime.UtcNow, priority);
         }
 
         public void Dispose()

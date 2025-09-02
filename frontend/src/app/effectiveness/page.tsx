@@ -20,7 +20,7 @@ import type {
   EffectivenessSearchDto,
   CreateEffectivenessDto,
   UpdateEffectivenessDto
-} from "@/lib/api-types";
+} from "@/lib/types";
 
 export default function EffectivenessPage() {
   // 状態管理

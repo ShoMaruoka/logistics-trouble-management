@@ -99,6 +99,28 @@
   - [x] 物流トラブル登録フォームの再設計
   - [x] 物流トラブル一覧の表示項目を提供サイトに合わせて修正
 
+- [x] 3.11 テストコードの非公開セッターアクセス問題の解決
+  - [x] IncidentRepositoryTestsのGetOverdueIncidentsAsync_ShouldReturnOverdueIncidentsテストを修正
+  - [x] リフレクションを使用した非公開セッターへのアクセス実装
+  - [x] BindingFlagsの適切な設定（Instance | Public | NonPublic）
+  - [x] GetSetMethod(true)を使用したセッターの取得とInvoke実行
+  - [x] テストの正常動作確認
+  - [x] 見積時間: 1時間
+
+- [x] 3.11 ダークモード機能の削除
+  - [x] globals.cssからダークモード関連のCSS変数を削除
+  - [x] ダークモード関連のタブスタイルを削除
+  - [x] @custom-variant darkの削除
+  - [x] 見積時間: 0.5時間
+
+- [x] 3.11 UI/UX問題の解決
+  - [x] モーダルダイアログとドロップダウンリストの背景色透過問題を解決
+  - [x] Tailwind CSS設定にCSS変数を追加
+  - [x] CSS変数の値をHSL形式に統一
+  - [x] ボタンの背景色を適切な青系に調整
+  - [x] 境界線の色を適切な濃さに調整
+  - [x] 見積時間: 2時間
+
 - [x] 3.11 データベーススクリプトの更新
   - [x] 現在のDB状態に合わせたテーブル作成スクリプトの更新
   - [x] 拡張フィールドに対応したインデックス作成スクリプトの更新
@@ -141,6 +163,60 @@
   - [x] 運送会社名に"該当なし"の値を追加
   - [x] フロントエンドの型定義とヘルパー関数の更新
   - [x] 見積時間: 4時間
+
+### 🔴 フェーズ3.15: マスタ管理機能拡張 (優先度: 高)
+- [x] 3.15.1 データベース設計・作成
+  - [x] マスタテーブルの作成（TroubleTypes, DamageTypes, Warehouses, ShippingCompanies）
+  - [x] 既存Enum値のマスタデータ投入
+  - [x] インデックス・制約の設定
+  - [x] データベースマイグレーションの作成
+  - [x] 見積時間: 6時間
+
+- [x] 3.15.2 バックエンド実装
+  - [x] マスタデータエンティティの作成（TroubleType, DamageType, Warehouse, ShippingCompany）
+  - [x] マスタデータリポジトリの実装
+  - [x] マスタ管理APIの実装（CRUD操作、一覧取得、有効/無効化）
+  - [x] Incidentエンティティの更新（EnumからマスタIDへの変更）
+  - [x] DTOクラスの更新（マスタ情報を含む表示用DTO）
+  - [x] バリデーションの更新
+  - [x] 見積時間: 12時間
+
+- [x] 3.15.3 フロントエンド実装
+  - [x] 型定義の更新（マスタデータ対応）
+  - [x] マスタ管理画面の実装（一覧、新規作成、編集、削除）
+  - [x] インシデント登録・編集フォームの更新（マスタ選択対応）
+  - [x] 一覧表示の更新（マスタ名表示）
+  - [x] 共通コンポーネントの作成（マスタ選択、カラーピッカー等）
+  - [x] 見積時間: 16時間
+
+- [x] 3.15.4 データ移行・テスト
+  - [x] 動作確認・テスト（各マスタ管理画面）
+  - [x] パフォーマンステスト（マスタデータ取得、結合クエリ）
+  - [x] 既存機能への影響確認
+  - [x] 見積時間: 8時間
+
+### 🔴 フェーズ3.16: ダークモード機能無効化 (優先度: 高)
+- [x] 3.16.1 マスタ管理機能のダークモード無効化
+  - [x] マスタ管理ページ（/master/page.tsx）のダークモードクラス削除
+  - [x] トラブル種類管理コンポーネントのダークモードクラス削除
+  - [x] 損傷種類管理コンポーネントのダークモードクラス削除
+  - [x] 出荷元倉庫管理コンポーネントのダークモードクラス削除
+  - [x] 運送会社管理コンポーネントのダークモードクラス削除
+  - [x] 共通コンポーネント（MasterSelect、ColorPicker）のダークモードクラス削除
+  - [x] ビルド確認と動作テスト
+  - [x] 見積時間: 2時間
+
+### 2025-08-29: マスタ管理機能拡張計画策定
+- [x] マスタ管理機能拡張仕様書の確認
+  - [x] 4項目のEnumからマスタテーブルへの変更計画確認
+  - [x] 個別テーブル設計の妥当性確認
+  - [x] 段階的移行計画の確認
+  - [x] レイアウト崩れの可能性分析（問題なしと判断）
+- [x] 実装計画の策定
+  - [x] フェーズ3.15としてマスタ管理機能拡張を追加
+  - [x] 4段階の実装ステップを定義
+  - [x] 見積時間の算出（合計42時間）
+  - [x] 優先度を高に設定（システム拡張性向上のため）
 
 - [x] 3.2 統計API（モック版）
   - [x] StatisticsControllerの実装
@@ -411,6 +487,97 @@
 
 ## 最近の修正履歴
 
+### 2025-08-29 3.15.3 フロントエンド実装 完了
+
+#### インシデント管理UI更新
+- **インシデント一覧表示の更新**
+  - マスタデータ対応の型定義（Incident、IncidentSearchDto、CreateIncidentDto、UpdateIncidentDto）を追加
+  - インシデント一覧コンポーネント（incident-list.tsx）を新しいマスタデータ対応に更新
+  - トラブル種類の表示でマスタデータの色を使用するように変更
+  - ソートキーを新しいマスタIDフィールド（troubleTypeId、damageTypeId、warehouseId、shippingCompanyId）に更新
+
+- **インシデント詳細表示の更新**
+  - インシデント詳細コンポーネント（incident-detail.tsx）にマスタ情報表示セクションを追加
+  - トラブル種類の色表示、損傷の種類、出荷元倉庫、運送会社名の表示を追加
+
+- **インシデント検索機能の更新**
+  - インシデント検索コンポーネント（incident-search.tsx）にマスタデータによる検索フィルタを追加
+  - トラブル種類、損傷の種類、出荷元倉庫、運送会社による検索機能を実装
+  - マスタデータの動的読み込みとローディング状態の表示
+
+#### 型定義とフック更新
+- **型定義の統合**
+  - 古いapi-typesから新しいtypesへの移行完了
+  - React Hooks（hooks.ts）を新しい型定義に更新
+  - 添付ファイル関連コンポーネントの型定義更新
+
+- **マスタデータフック**
+  - useMasterDataカスタムフックの活用
+  - インシデントフォーム、検索コンポーネントでのマスタデータ統合
+
+#### 技術的な改善
+- **パッケージ依存関係**
+  - @heroicons/reactパッケージの追加（--legacy-peer-depsで解決）
+  - React 19.1.0との互換性確保
+
+- **コンポーネント設計**
+  - 共通コンポーネント（MasterSelect、ColorPicker）の活用
+  - 型安全性の確保と実行時エラーの防止
+
+### 2025-08-29 3.15.2 バックエンド実装 完了
+- [x] 3.15.2 バックエンド実装の完了
+  - [x] マスタデータエンティティの作成
+    - TroubleType（トラブル種類マスタ）
+    - DamageType（損傷種類マスタ）
+    - Warehouse（出荷元倉庫マスタ）
+    - ShippingCompany（運送会社マスタ）
+  - [x] マスタデータリポジトリの実装
+    - 各マスタ用のリポジトリインターフェースと実装
+    - アクティブデータ取得、ソート順取得、名前重複チェック等の機能
+  - [x] マスタ管理APIの実装
+    - TroubleTypesController（CRUD操作、一覧取得、有効/無効化）
+    - DamageTypesController（カテゴリ別取得機能含む）
+    - WarehousesController（所在地・連絡先管理）
+    - ShippingCompaniesController（会社種別別取得機能含む）
+  - [x] Incidentエンティティの更新
+    - EnumベースからマスタIDベースへの変更完了
+    - ナビゲーションプロパティの追加
+    - コンストラクタとメソッドの更新
+  - [x] DTOクラスの更新
+    - 各マスタ用のDTO（表示用、作成用、更新用）
+    - IncidentDtoにマスタ情報表示用プロパティを追加
+  - [x] バリデーションの更新
+    - 各マスタ用の作成・更新バリデーションクラス
+    - 日本語エラーメッセージ対応
+  - [x] DIコンテナへの登録
+    - マスタデータリポジトリの登録
+    - バリデーションクラスの自動登録
+  - [x] 見積時間: 12時間（実際の作業時間: 約10時間）
+
+### 2025-08-29: マスタ管理機能拡張 - データベース設計・作成完了
+- [x] 3.15.1 データベース設計・作成の実装
+  - [x] マスタテーブル作成スクリプト（06_CreateMasterTables.sql）の作成
+    - TroubleTypesテーブル（トラブル種類マスタ）
+    - DamageTypesテーブル（損傷種類マスタ）
+    - Warehousesテーブル（出荷元倉庫マスタ）
+    - ShippingCompaniesテーブル（運送会社マスタ）
+    - インデックス・制約・一意制約の設定
+  - [x] 初期データ投入スクリプト（07_InsertMasterData.sql）の作成
+    - トラブル種類初期データ（10件）
+    - 損傷種類初期データ（8件）
+    - 出荷元倉庫初期データ（4件）
+    - 運送会社初期データ（5件）
+  - [x] Incidentsテーブル更新スクリプト（08_UpdateIncidentsTable.sql）の作成
+    - 新しいマスタIDカラムの追加
+    - 既存データの移行処理（Enum値からマスタIDへの変換）
+    - 外部キー制約の追加
+    - 古いEnumカラムの削除
+  - [x] 実行手順書（README_MasterTables.md）の作成
+    - スクリプト実行手順の詳細化
+    - 確認方法とトラブルシューティング
+    - バックアップとロールバック手順
+  - [x] 見積時間: 6時間（実際の作業時間: 約5時間）
+
 ### 2025-08-26: インシデント編集時の403エラー短期対応
 - [x] インシデント編集時の403 Forbiddenエラーの原因調査
   - バックエンドの認証・認可設定不備を特定
@@ -559,3 +726,229 @@
   - 日付フィールドの空文字列をnullに変換する処理を追加
   - フロントエンド・バックエンド間の型定義の整合性を確保
   - APIリクエストの正常動作を確認
+
+### 🔴 フェーズ3.17: Next.js App Router最適化 (優先度: 高)
+- [x] 3.17.1 ページリロードの最適化
+  - [x] frontend/src/app/page.tsxのwindow.location.reload()をrouter.refresh()に置き換え
+  - [x] useRouterフックのインポートと実装
+  - [x] 3箇所の置き換え完了（handleCreateIncident、handleUpdateIncident、handleDeleteIncident）
+  - [x] サーバーコンポーネントの再検証による効率的なデータ更新
+  - [x] フルページリロードの回避によるUX向上
+  - [x] 見積時間: 1時間
+
+- [x] 3.17.2 日付処理と状態管理の最適化
+  - [x] frontend/src/app/incidents/page.tsxのuseEffect最適化
+  - [x] toISOString()によるUTC日付シフト問題の解決
+  - [x] 関数型状態更新による古い状態参照問題の解決
+  - [x] ローカル日付ゲッター（getFullYear、getMonth、getDate）による日付フォーマット
+  - [x] YYYY-MM-DD形式での日付文字列生成
+  - [x] フィルタクリア時のundefined設定
+  - [x] 見積時間: 1時間
+
+- [x] 3.17.3 エラーメッセージ表示の安全性向上
+  - [x] frontend/src/app/incidents/page.tsxのエラー表示部分の修正
+  - [x] incidentsErrorの安全な正規化関数（normalizeErrorMessage）の実装
+  - [x] 文字列、Errorオブジェクト、任意のオブジェクトへの対応
+  - [x] JSON.stringify失敗時のフォールバック処理
+  - [x] 循環参照によるクラッシュの防止
+  - [x] 見積時間: 0.5時間
+
+### 🔴 フェーズ3.18: インシデント検索UI改善 (優先度: 高)
+- [x] 3.18.1 クリアボタン表示条件の修正
+  - [x] frontend/src/components/incident-search.tsxのクリアボタン表示条件にfromDateとtoDateを追加
+  - [x] 日付フィルタのみが設定されている場合でもクリアボタンが表示されるように改善
+  - [x] ユーザビリティの向上（日付フィルタクリアの容易化）
+  - [x] 見積時間: 0.5時間
+
+- [x] 3.18.2 マスタデータエラー処理の実装
+  - [x] useMasterDataフックにリトライ機能（refetch）を追加
+  - [x] incident-search.tsxコンポーネントにエラー状態の処理を追加
+  - [x] ユーザーフレンドリーなエラーUIの実装（日本語メッセージ、アイコン、再試行ボタン）
+  - [x] エラーログの出力（コンソール出力）
+  - [x] リトライ機能によるマスタデータ再取得の実装
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.19: セキュリティ強化 - PII保護 (優先度: 高)
+- [x] 3.19.1 フロントエンドAPIクライアントのPII保護
+  - [x] frontend/src/lib/api-client.tsのcreateIncidentメソッドのconsole.logを環境変数チェックで保護
+  - [x] 開発環境（NODE_ENV === 'development'）でのみログ出力を許可
+  - [x] センシティブなフィールド（incidentDetails、occurrenceLocation、summary、cause、preventionMeasures）をサニタイズ
+  - [x] 本番環境でのPII露出リスクを完全に排除
+  - [x] TypeScriptビルド確認と動作テスト
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.20: CreateIncidentDtoのDTOレベルバリデーション実装 (優先度: 高)
+- [x] 3.20.1 DTOレベルのバリデーション実装
+  - [x] CreateIncidentDtoクラスにIValidatableObjectインターフェースを実装
+  - [x] Enum値の検証（TroubleType、DamageType）を実装
+  - [x] クロスフィールドルール（DefectiveItems <= TotalShipments、EffectivenessStatusとEffectivenessDateの関連）を実装
+  - [x] 参照存在チェック（Warehouse、ShippingCompany）をアプリケーション/サービス層に移動
+  - [x] 既存のFluentValidationクラスとの連携を実装
+  - [x] テストコードの追加と動作確認
+  - [x] 見積時間: 3時間
+
+- [x] 3.20.2 アプリケーション層での参照存在チェック実装
+  - [x] IncidentsControllerのCreateIncidentメソッドにマスタデータ参照存在チェックを追加
+  - [x] IncidentsControllerのUpdateIncidentメソッドにマスタデータ参照存在チェックを追加
+  - [x] 400/422エラーの適切な返却を実装
+  - [x] 見積時間: 2時間
+
+- [x] 3.20.3 テストと品質保証
+  - [x] DTOレベルバリデーションのテストメソッドを追加
+  - [x] Enum値検証、クロスフィールドルール、参照存在チェックのテストを実装
+  - [x] 既存テストの修正と動作確認
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.21: N+1問題解決とパフォーマンス最適化 (優先度: 高)
+- [x] 3.21.1 バッチ処理によるN+1問題の解決
+  - [x] IMasterDataResolverServiceにGetIncidentMasterDataBatchAsyncメソッドを追加
+  - [x] IncidentMasterDataBatchクラスの作成（マスタデータの辞書管理）
+  - [x] MasterDataResolverServiceにバッチ処理メソッドを実装
+  - [x] IRepository<T>にGetByIdsAsyncメソッドを追加
+  - [x] Repository<T>にGetByIdsAsyncメソッドを実装
+  - [x] IncidentsControllerにConvertToDtoBatchAsyncメソッドを追加
+  - [x] 既存のConvertToDtoAsync呼び出しをバッチ処理版に置き換え
+  - [x] フォールバック処理の実装（エラー時の個別変換への切り替え）
+  - [x] 見積時間: 4時間
+
+- [x] 3.21.2 パフォーマンス改善の実装
+  - [x] 外部キーの一括収集とユニーク化
+  - [x] 並行処理によるマスタデータの一括取得
+  - [x] 辞書ルックアップによる効率的なマッピング
+  - [x] 非同期処理の保持と同期的な辞書アクセスの組み合わせ
+  - [x] ビルド確認とエラーなしの確認
+  - [x] 見積時間: 2時間
+
+- [x] 3.21.3 重複コードの削除と定数化
+  - [x] IncidentsControllerの重複したTimeSpan.FromDays(3)を特定（3箇所）
+  - [x] クラスレベルの定数DefaultExpectedResolutionTimeを定義
+  - [x] 重複箇所を定数参照に置換（GetIncidents、ConvertToDtoAsync、ConvertToDtoBatchAsync）
+  - [x] 単一の情報源（Single Source of Truth）の実現
+  - [x] コードの保守性と可読性の向上
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.22: CreateIncidentDtoのバリデーション強化 (優先度: 高)
+- [x] 3.22.1 Range属性による下限値バリデーションの追加
+  - [x] TotalShipmentsプロパティに[Range(0, int.MaxValue)]属性を追加
+  - [x] DefectiveItemsプロパティに[Range(0, int.MaxValue)]属性を追加
+  - [x] 日本語エラーメッセージの設定（「出荷総数は0以上の値を入力してください。」「不良品数は0以上の値を入力してください。」）
+  - [x] 負の値の入力を防止するバリデーションの実装
+  - [x] 既存のValidateメソッドとの整合性確保（DefectiveItems <= TotalShipments）
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.23: Incident.Createメソッドのenum値検証と例外テスト実装 (優先度: 高)
+- [x] 3.23.1 Incident.Createメソッドのenum値検証実装
+  - [x] Incident.Createメソッドにenum値の検証を追加
+  - [x] ValidateEnumValueヘルパーメソッドの実装
+  - [x] TroubleType、DamageType、Warehouse、ShippingCompanyのenum値検証
+  - [x] 無効なenum値が渡された場合のArgumentExceptionスロー
+  - [x] 見積時間: 2時間
+
+- [x] 3.23.2 無効なenum値での例外テスト実装
+  - [x] IncidentTests.csにCreate_WithInvalidEnumInt_ShouldThrowテストを追加
+  - [x] 無効な整数値（9999）での各enumパラメータのテスト
+  - [x] ArgumentExceptionのスロー確認とメッセージ内容の検証
+  - [x] 見積時間: 1時間
+
+- [x] 3.23.3 他のIncident.Create使用箇所の移行状況確認
+  - [x] 統合テスト、DatabaseSeeder、IncidentRepositoryTests、IncidentsControllerでの使用状況確認
+  - [x] すべての箇所でenum値を適切にキャストして使用していることを確認
+  - [x] マスタデータ参照存在チェックによる適切なガード実装の確認
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.24: 数値入力バリデーション強化 (優先度: 高)
+- [x] 3.24.1 数値入力フィールドの安全なバリデーション実装
+  - [x] frontend/src/components/incident-form.tsxにvalidateNumericInput関数を追加
+  - [x] 入力値のトリム、10進数パース、数値検証、範囲チェック、クリッピングを実装
+  - [x] 既存のparseInt(e.target.value) || 0を安全なバリデーション処理に置き換え
+  - [x] totalShipmentsとdefectiveItemsフィールドのバリデーション改善
+  - [x] 負の値、非数値文字列、安全整数範囲外の値の適切な処理
+  - [x] 見積時間: 1時間
+
+### 🔴 フェーズ3.25: マスタデータID検証の改善 (優先度: 高)
+- [x] 3.25.1 マスタデータIDの安全な検証実装
+  - [x] frontend/src/components/incident-form.tsxにvalidateMasterDataId関数を追加
+  - [x] null/undefinedチェック、正の整数チェックを実装
+  - [x] getFirstValidId関数で有効なIDを持つ最初の要素を取得
+  - [x] 配列の安全性チェック（空配列、idフィールド欠損）を実装
+  - [x] 見積時間: 1時間
+
+- [x] 3.25.2 エラーハンドリングとフォーム状態の安全性向上
+  - [x] useEffect内のマスタデータID設定ロジックをtry/catchで囲む
+  - [x] 検証されたIDのみをsetFormDataで設定
+  - [x] エラー発生時はデフォルト値（0）をフォールバックとして設定
+  - [x] 開発環境でのデバッグログ出力を実装
+  - [x] 無条件でtroubleTypes[0].idなどを使用しない安全な実装
+  - [x] 見積時間: 1時間
+
+- [x] 3.25.3 品質保証とテスト
+  - [x] TypeScriptビルド確認とコンパイルエラーなしの確認
+  - [x] 既存のフォーム機能への影響なしの確認
+  - [x] エラーハンドリングの動作確認
+  - [x] 見積時間: 0.5時間
+
+### 🔴 フェーズ3.26: マスタデータエラー処理の改善 (優先度: 高)
+- [x] 3.26.1 曖昧性のないラベルへの置き換え
+  - [x] '不明'リテラルを'未設定'に置き換え
+  - [x] autoCategory構築時の曖昧な値の連結を回避
+  - [x] 条件分岐による適切なカテゴリ生成ロジックの実装
+  - [x] 見積時間: 1時間
+
+- [x] 3.26.2 データ整合性チェックの実装
+  - [x] マスタデータ不足時の警告ログ出力（console.warn）
+  - [x] フォームエラーフラグ（hasMasterDataError）の追加
+  - [x] マスタデータ不足項目の詳細記録
+  - [x] 見積時間: 1時間
+
+- [x] 3.26.3 UI/UX改善とエラー表示
+  - [x] マスタデータエラー警告メッセージの表示
+  - [x] 送信ボタンの色変更（エラー時は黄色）
+  - [x] 送信前の確認ダイアログ表示
+  - [x] エラー状態でも送信可能な設計
+  - [x] 見積時間: 1時間
+
+- [x] 3.26.4 品質保証とテスト
+  - [x] TypeScriptビルド確認とコンパイルエラーなしの確認
+  - [x] 既存のフォーム機能への影響なしの確認
+  - [x] エラーハンドリングの動作確認
+  - [x] 見積時間: 0.5時間
+
+### 🔴 フェーズ3.27: UpdateIncidentDtoのバリデーション強化 (優先度: 高)
+- [x] 3.27.1 EnumValueAttributeの作成
+  - [x] backend/LogisticsTroubleManagement.Core/Validation/EnumValueAttribute.csの新規作成
+  - [x] 指定されたenum型に対してint値の検証を行うカスタムバリデーション属性を実装
+  - [x] null値は許可し、非null整数値はEnum.IsDefinedで検証
+  - [x] 見積時間: 1時間
+
+- [x] 3.27.2 UpdateIncidentDtoのバリデーション実装
+  - [x] System.ComponentModel.DataAnnotationsのusing文を追加
+  - [x] LogisticsTroubleManagement.Core.Validationのusing文を追加
+  - [x] TroubleTypeプロパティに[EnumValue(typeof(TroubleType))]属性を追加
+  - [x] DamageTypeプロパティに[EnumValue(typeof(DamageType))]属性を追加
+  - [x] コンパイル時検証の復活と無効な整数値の防止
+  - [x] 見積時間: 1時間
+
+- [x] 3.27.3 品質保証とテスト
+  - [x] プロジェクトのビルド確認とエラーなしの確認
+  - [x] 既存のDTO機能への影響なしの確認
+  - [x] バリデーション属性の動作確認
+  - [x] 見積時間: 0.5時間
+
+### 🔴 フェーズ3.28: PagedResultDtoのプロパティ名統一 (優先度: 高)
+- [x] 3.28.1 フロントエンド・バックエンド間のプロパティ名不一致の解決
+  - [x] フロントエンドのPagedResultDtoをpageNumberからpageに変更
+  - [x] 検索DTOとの一貫性確保
+  - [x] バックエンドレスポンスとの互換性維持
+  - [x] 見積時間: 2時間
+
+- [x] 3.28.2 フロントエンドでの使用箇所の更新
+  - [x] 検証スクリプト（rg）による全使用箇所の特定
+  - [x] pageNumber参照をpage参照に置換（incidents、attachments、effectiveness）
+  - [x] 型定義の整合性確保
+  - [x] 見積時間: 2時間
+
+- [x] 3.28.3 単体/統合テストの追加
+  - [x] ページネーションキーの整合性テスト（PagedResultDtoTests.cs）
+  - [x] バックエンドレスポンスとの一致確認（統合テスト）
+  - [x] JSON シリアライゼーションでのプロパティ名確認
+  - [x] 見積時間: 1時間

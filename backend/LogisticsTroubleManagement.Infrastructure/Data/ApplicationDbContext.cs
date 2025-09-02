@@ -14,6 +14,12 @@ public class ApplicationDbContext : DbContext
 	public DbSet<Attachment> Attachments => Set<Attachment>();
 	public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 	public DbSet<Effectiveness> Effectiveness => Set<Effectiveness>();
+	
+	// マスタデータのDbSet
+	public DbSet<TroubleType> TroubleTypes => Set<TroubleType>();
+	public DbSet<DamageType> DamageTypes => Set<DamageType>();
+	public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+	public DbSet<ShippingCompany> ShippingCompanies => Set<ShippingCompany>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{

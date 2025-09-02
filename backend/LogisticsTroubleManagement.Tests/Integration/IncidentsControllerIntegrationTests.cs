@@ -8,6 +8,7 @@ using LogisticsTroubleManagement.Infrastructure.Data;
 using LogisticsTroubleManagement.Core.DTOs;
 using LogisticsTroubleManagement.Domain.Enums;
 using Xunit;
+using DomainEnums = LogisticsTroubleManagement.Domain.Enums;
 
 namespace LogisticsTroubleManagement.Tests.Integration
 {
@@ -60,6 +61,34 @@ namespace LogisticsTroubleManagement.Tests.Integration
             var incidents = await response.Content.ReadFromJsonAsync<PagedResultDto<IncidentDto>>();
             Assert.NotNull(incidents);
             Assert.True(incidents.Items.Count() > 0);
+        }
+
+        [Fact(Skip = "データベースプロバイダー競合のため一時的にスキップ")]
+        public async Task GetIncidents_ShouldReturnValidPagedResult()
+        {
+            // Arrange
+            var query = "?page=1&pageSize=5";
+
+            // Act
+            var response = await _client.GetAsync($"/api/incidents{query}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var pagedResult = await response.Content.ReadFromJsonAsync<PagedResultDto<IncidentDto>>();
+            
+            // PagedResultDtoのプロパティ整合性を確認
+            Assert.NotNull(pagedResult);
+            Assert.Equal(1, pagedResult.Page); // pageNumberではなくpageプロパティ
+            Assert.Equal(5, pagedResult.PageSize);
+            Assert.True(pagedResult.TotalCount >= 0);
+            Assert.True(pagedResult.TotalPages >= 1);
+            Assert.NotNull(pagedResult.Items);
+            Assert.True(pagedResult.Items.Count() <= 5);
+            
+            // バックエンドレスポンスのプロパティ名が正しいことを確認
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            Assert.Contains("\"page\":", jsonContent);
+            Assert.DoesNotContain("\"pageNumber\":", jsonContent);
         }
 
         [Fact(Skip = "データベースプロバイダー競合のため一時的にスキップ")]
@@ -252,10 +281,10 @@ namespace LogisticsTroubleManagement.Tests.Integration
                     "商品の配送が予定より2日遅れている",
                     "配送",
                     1,
-                    TroubleType.DeliveryTrouble,
-                    DamageType.OtherDeliveryMistake,
-                    Warehouse.WarehouseA,
-                    ShippingCompany.ATransport,
+                    (int)DomainEnums.TroubleType.DeliveryTrouble,
+                    (int)DomainEnums.DamageType.OtherDeliveryMistake,
+                    (int)DomainEnums.Warehouse.WarehouseA,
+                    (int)DomainEnums.ShippingCompany.ATransport,
                     DateTime.UtcNow,
                     Priority.Medium
                 ),
@@ -264,10 +293,10 @@ namespace LogisticsTroubleManagement.Tests.Integration
                     "配送中に商品が破損した",
                     "品質",
                     1,
-                    TroubleType.ProductTrouble,
-                    DamageType.DamageOrContamination,
-                    Warehouse.WarehouseB,
-                    ShippingCompany.BExpress,
+                    (int)DomainEnums.TroubleType.ProductTrouble,
+                    (int)DomainEnums.DamageType.DamageOrContamination,
+                    (int)DomainEnums.Warehouse.WarehouseB,
+                    (int)DomainEnums.ShippingCompany.BExpress,
                     DateTime.UtcNow,
                     Priority.High
                 )

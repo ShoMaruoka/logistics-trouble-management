@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, FileText, Image, File } from "lucide-react";
-import type { CreateAttachmentDto } from "@/lib/api-types";
+import type { CreateAttachmentDto } from "@/lib/types";
 
 interface AttachmentUploadProps {
   incidentId?: number;

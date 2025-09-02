@@ -118,8 +118,8 @@ export interface IncidentSearchDto {
   fromDate?: string;
   toDate?: string;
   isOverdue?: boolean;
-  page?: number;
-  pageSize?: number;
+  page: number;
+  pageSize: number;
   sortBy?: string;
   ascending?: boolean;
 }
@@ -197,8 +197,8 @@ export interface AttachmentSearchDto {
   uploadedById?: number;
   uploadedFrom?: string;
   uploadedTo?: string;
-  page?: number;
-  pageSize?: number;
+  page: number;
+  pageSize: number;
   sortBy?: string;
   ascending?: boolean;
 }
@@ -242,8 +242,8 @@ export interface EffectivenessSearchDto {
   measuredTo?: string;
   minImprovementRate?: number;
   maxImprovementRate?: number;
-  page?: number;
-  pageSize?: number;
+  page: number;
+  pageSize: number;
   sortBy?: string;
   ascending?: boolean;
 }

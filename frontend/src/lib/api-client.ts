@@ -105,7 +105,7 @@ class ApiClient {
 	}
 
 	// インシデント関連API
-	async getIncidents(searchParams?: IncidentSearchDto): Promise<PagedResultDto<IncidentDto>> {
+	async getIncidents(searchParams?: IncidentSearchDto): Promise<PagedResultDto<Incident>> {
 		const params = new URLSearchParams();
 		if (searchParams) {
 			(Object.entries(searchParams) as Array<[keyof IncidentSearchDto, IncidentSearchDto[keyof IncidentSearchDto]]>).forEach(([key, value]) => {
@@ -118,23 +118,35 @@ class ApiClient {
 		const queryString = params.toString();
 		const endpoint = `/api/incidents${queryString ? `?${queryString}` : ''}`;
 		
-		return this.request<PagedResultDto<IncidentDto>>(endpoint);
+		return this.request<PagedResultDto<Incident>>(endpoint);
 	}
 
-	async getIncident(id: number): Promise<IncidentDto> {
-		return this.request<IncidentDto>(`/api/incidents/${id}`);
+	async getIncident(id: number): Promise<Incident> {
+		return this.request<Incident>(`/api/incidents/${id}`);
 	}
 
-	async createIncident(data: CreateIncidentDto): Promise<IncidentDto> {
-		console.log('送信データ:', JSON.stringify(data, null, 2));
-		return this.request<IncidentDto>('/api/incidents', {
+	async createIncident(data: CreateIncidentDto): Promise<Incident> {
+		// 開発環境でのみログ出力（PII保護）
+		if (process.env.NODE_ENV === 'development') {
+			// センシティブなフィールドをサニタイズ
+			const sanitizedData = {
+				...data,
+				incidentDetails: data.incidentDetails ? '[REDACTED]' : undefined,
+				occurrenceLocation: data.occurrenceLocation ? '[REDACTED]' : undefined,
+				summary: data.summary ? '[REDACTED]' : undefined,
+				cause: data.cause ? '[REDACTED]' : undefined,
+				preventionMeasures: data.preventionMeasures ? '[REDACTED]' : undefined,
+			};
+			console.log('送信データ（サニタイズ済み）:', JSON.stringify(sanitizedData, null, 2));
+		}
+		return this.request<Incident>('/api/incidents', {
 			method: 'POST',
 			body: JSON.stringify(data),
 		});
 	}
 
-	async updateIncident(id: number, data: UpdateIncidentDto): Promise<IncidentDto> {
-		return this.request<IncidentDto>(`/api/incidents/${id}`, {
+	async updateIncident(id: number, data: UpdateIncidentDto): Promise<Incident> {
+		return this.request<Incident>(`/api/incidents/${id}`, {
 			method: 'PUT',
 			body: JSON.stringify(data),
 		});
@@ -287,6 +299,147 @@ class ApiClient {
 		});
 	}
 
+	// マスタデータ関連API
+	// トラブル種類マスタ
+	async getTroubleTypes(): Promise<TroubleType[]> {
+		return this.request<TroubleType[]>('/api/troubletypes');
+	}
+
+	async getActiveTroubleTypes(): Promise<TroubleType[]> {
+		return this.request<TroubleType[]>('/api/troubletypes/active');
+	}
+
+	async getTroubleType(id: number): Promise<TroubleType> {
+		return this.request<TroubleType>(`/api/troubletypes/${id}`);
+	}
+
+	async createTroubleType(data: CreateTroubleTypeDto): Promise<TroubleType> {
+		return this.request<TroubleType>('/api/troubletypes', {
+			method: 'POST',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async updateTroubleType(id: number, data: UpdateTroubleTypeDto): Promise<void> {
+		return this.request<void>(`/api/troubletypes/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async deleteTroubleType(id: number): Promise<void> {
+		return this.request<void>(`/api/troubletypes/${id}`, {
+			method: 'DELETE',
+		});
+	}
+
+	// 損傷種類マスタ
+	async getDamageTypes(): Promise<DamageType[]> {
+		return this.request<DamageType[]>('/api/damagetypes');
+	}
+
+	async getActiveDamageTypes(): Promise<DamageType[]> {
+		return this.request<DamageType[]>('/api/damagetypes/active');
+	}
+
+	async getDamageTypesByCategory(category: string): Promise<DamageType[]> {
+		return this.request<DamageType[]>(`/api/damagetypes/category/${category}`);
+	}
+
+	async getDamageType(id: number): Promise<DamageType> {
+		return this.request<DamageType>(`/api/damagetypes/${id}`);
+	}
+
+	async createDamageType(data: CreateDamageTypeDto): Promise<DamageType> {
+		return this.request<DamageType>('/api/damagetypes', {
+			method: 'POST',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async updateDamageType(id: number, data: UpdateDamageTypeDto): Promise<void> {
+		return this.request<void>(`/api/damagetypes/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async deleteDamageType(id: number): Promise<void> {
+		return this.request<void>(`/api/damagetypes/${id}`, {
+			method: 'DELETE',
+		});
+	}
+
+	// 出荷元倉庫マスタ
+	async getWarehouses(): Promise<Warehouse[]> {
+		return this.request<Warehouse[]>('/api/warehouses');
+	}
+
+	async getActiveWarehouses(): Promise<Warehouse[]> {
+		return this.request<Warehouse[]>('/api/warehouses/active');
+	}
+
+	async getWarehouse(id: number): Promise<Warehouse> {
+		return this.request<Warehouse>(`/api/warehouses/${id}`);
+	}
+
+	async createWarehouse(data: CreateWarehouseDto): Promise<Warehouse> {
+		return this.request<Warehouse>('/api/warehouses', {
+			method: 'POST',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async updateWarehouse(id: number, data: UpdateWarehouseDto): Promise<void> {
+		return this.request<void>(`/api/warehouses/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async deleteWarehouse(id: number): Promise<void> {
+		return this.request<void>(`/api/warehouses/${id}`, {
+			method: 'DELETE',
+		});
+	}
+
+	// 運送会社マスタ
+	async getShippingCompanies(): Promise<ShippingCompany[]> {
+		return this.request<ShippingCompany[]>('/api/shippingcompanies');
+	}
+
+	async getActiveShippingCompanies(): Promise<ShippingCompany[]> {
+		return this.request<ShippingCompany[]>('/api/shippingcompanies/active');
+	}
+
+	async getShippingCompaniesByCompanyType(companyType: string): Promise<ShippingCompany[]> {
+		return this.request<ShippingCompany[]>(`/api/shippingcompanies/company-type/${companyType}`);
+	}
+
+	async getShippingCompany(id: number): Promise<ShippingCompany> {
+		return this.request<ShippingCompany>(`/api/shippingcompanies/${id}`);
+	}
+
+	async createShippingCompany(data: CreateShippingCompanyDto): Promise<ShippingCompany> {
+		return this.request<ShippingCompany>('/api/shippingcompanies', {
+			method: 'POST',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async updateShippingCompany(id: number, data: UpdateShippingCompanyDto): Promise<void> {
+		return this.request<void>(`/api/shippingcompanies/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(data),
+		});
+	}
+
+	async deleteShippingCompany(id: number): Promise<void> {
+		return this.request<void>(`/api/shippingcompanies/${id}`, {
+			method: 'DELETE',
+		});
+	}
+
 	// ヘルスチェック
 	async healthCheck(): Promise<{ status: string; timestamp: string }> {
 		return this.request<{ status: string; timestamp: string }>('/health');
@@ -295,7 +448,7 @@ class ApiClient {
 
 // 型インポート
 import type {
-	IncidentDto,
+	Incident,
 	CreateIncidentDto,
 	UpdateIncidentDto,
 	IncidentSearchDto,
@@ -311,7 +464,20 @@ import type {
 	UpdateEffectivenessDto,
 	EffectivenessSearchDto,
 	EffectivenessSummaryDto,
-} from './api-types';
+	// マスタデータ型
+	TroubleType,
+	DamageType,
+	Warehouse,
+	ShippingCompany,
+	CreateTroubleTypeDto,
+	UpdateTroubleTypeDto,
+	CreateDamageTypeDto,
+	UpdateDamageTypeDto,
+	CreateWarehouseDto,
+	UpdateWarehouseDto,
+	CreateShippingCompanyDto,
+	UpdateShippingCompanyDto,
+} from './types';
 
 // シングルトンインスタンス
 export const apiClient = new ApiClient();

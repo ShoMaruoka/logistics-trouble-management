@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Edit, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { EffectivenessDto } from "@/lib/api-types";
+import type { EffectivenessDto } from "@/lib/types";
 
 interface EffectivenessListProps {
   effectiveness: EffectivenessDto[];

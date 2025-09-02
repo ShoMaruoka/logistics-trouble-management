@@ -18,11 +18,11 @@ import {
   useDeleteIncident 
 } from "@/lib/hooks";
 import type { 
-  IncidentDto, 
+  Incident, 
   IncidentSearchDto, 
   CreateIncidentDto, 
   UpdateIncidentDto 
-} from "@/lib/api-types";
+} from "@/lib/types";
 
 export default function IncidentsPage() {
   // 共通フィルタ状態
@@ -37,17 +37,17 @@ export default function IncidentsPage() {
   });
   
   const [sortConfig, setSortConfig] = React.useState<{
-    key: keyof IncidentDto;
+    key: keyof Incident;
     direction: 'ascending' | 'descending';
   } | null>({
     key: 'occurrenceDate',
     direction: 'descending',
   });
 
-  const [selectedIncident, setSelectedIncident] = React.useState<IncidentDto | null>(null);
+  const [selectedIncident, setSelectedIncident] = React.useState<Incident | null>(null);
   const [showDetail, setShowDetail] = React.useState(false);
   const [showForm, setShowForm] = React.useState(false);
-  const [editingIncident, setEditingIncident] = React.useState<IncidentDto | null>(null);
+  const [editingIncident, setEditingIncident] = React.useState<Incident | null>(null);
 
   // API Hooks
   const { data: incidentsData, loading: incidentsLoading, error: incidentsError, refetch: refetchIncidents } = useIncidents(searchParams);
@@ -56,7 +56,7 @@ export default function IncidentsPage() {
   const { deleteIncident, loading: deleteLoading } = useDeleteIncident();
 
   // ソート処理
-  const handleSort = (key: keyof IncidentDto) => {
+  const handleSort = (key: keyof Incident) => {
     const direction = sortConfig?.key === key && sortConfig.direction === 'ascending' ? 'descending' : 'ascending';
     setSortConfig({ key, direction });
     setSearchParams(prev => ({
@@ -86,33 +86,60 @@ export default function IncidentsPage() {
 
   // フィルタ状態に応じた検索パラメータの更新
   React.useEffect(() => {
-    const newSearchParams: IncidentSearchDto = {
-      ...searchParams,
-      page: 1, // フィルタ変更時は1ページ目に戻す
-    };
+    setSearchParams(prev => {
+      const newSearchParams: IncidentSearchDto = {
+        ...prev,
+        page: 1, // フィルタ変更時は1ページ目に戻す
+      };
 
-    // 年度・月フィルタの適用
-    if (selectedYear > 0) {
-      const startDate = new Date(selectedYear, 0, 1); // 1月1日
-      const endDate = new Date(selectedYear, 11, 31); // 12月31日
-      
-      if (selectedMonth > 0) {
-        // 月間表示の場合
-        startDate.setMonth(selectedMonth - 1);
-        endDate.setMonth(selectedMonth - 1);
-        endDate.setDate(new Date(selectedYear, selectedMonth, 0).getDate()); // 月末日
+      // 年度・月フィルタの適用
+      if (selectedYear > 0) {
+        const startDate = new Date(selectedYear, 0, 1); // 1月1日
+        const endDate = new Date(selectedYear, 11, 31); // 12月31日
+        
+        if (selectedMonth > 0) {
+          // 月間表示の場合
+          startDate.setMonth(selectedMonth - 1);
+          endDate.setMonth(selectedMonth - 1);
+          endDate.setDate(new Date(selectedYear, selectedMonth, 0).getDate()); // 月末日
+        }
+        
+        // ローカル日付ゲッターを使用してYYYY-MM-DD形式に変換
+        const formatDate = (date: Date): string => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        newSearchParams.fromDate = formatDate(startDate);
+        newSearchParams.toDate = formatDate(endDate);
+      } else {
+        // フィルタをクリア
+        newSearchParams.fromDate = undefined;
+        newSearchParams.toDate = undefined;
       }
-      
-      newSearchParams.fromDate = startDate.toISOString().split('T')[0];
-      newSearchParams.toDate = endDate.toISOString().split('T')[0];
-    } else {
-      // フィルタをクリア
-      newSearchParams.fromDate = undefined;
-      newSearchParams.toDate = undefined;
-    }
 
-    setSearchParams(newSearchParams);
+      return newSearchParams;
+    });
   }, [selectedYear, selectedMonth]);
+
+  // エラーメッセージを安全に正規化する関数
+  const normalizeErrorMessage = (error: unknown): string => {
+    if (typeof error === 'string') {
+      return error;
+    }
+    
+    if (error && typeof error === 'object' && 'message' in error) {
+      return String(error.message);
+    }
+    
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  };
 
   // ページネーション処理
   const handlePageChange = (page: number) => {
@@ -120,14 +147,12 @@ export default function IncidentsPage() {
   };
 
   // インシデント操作
-  const handleIncidentClick = (incident: IncidentDto) => {
+  const handleIncidentClick = (incident: Incident) => {
     setSelectedIncident(incident);
     setShowDetail(true);
   };
 
-
-
-  const handleDeleteIncident = async (incident: IncidentDto) => {
+  const handleDeleteIncident = async (incident: Incident) => {
     if (window.confirm(`インシデント「${incident.title}」を削除しますか？`)) {
       try {
         await deleteIncident(incident.id);
@@ -207,8 +232,8 @@ export default function IncidentsPage() {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <span>エラー: {incidentsError}</span>
+              <AlertCircle className="h-5 w-4" />
+              <span>エラー: {normalizeErrorMessage(incidentsError)}</span>
             </div>
           </CardContent>
         </Card>

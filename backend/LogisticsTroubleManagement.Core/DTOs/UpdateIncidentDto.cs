@@ -1,4 +1,6 @@
 using LogisticsTroubleManagement.Domain.Enums;
+using LogisticsTroubleManagement.Core.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace LogisticsTroubleManagement.Core.DTOs;
 
@@ -11,10 +13,12 @@ public class UpdateIncidentDto
     public IncidentStatus Status { get; set; }
     
     // 物流特化項目
-    public TroubleType? TroubleType { get; set; }
-    public DamageType? DamageType { get; set; }
-    public Warehouse? Warehouse { get; set; }
-    public ShippingCompany? ShippingCompany { get; set; }
+    [EnumValue(typeof(TroubleType))]
+    public int? TroubleType { get; set; }
+    [EnumValue(typeof(DamageType))]
+    public int? DamageType { get; set; }
+    public int? Warehouse { get; set; }
+    public int? ShippingCompany { get; set; }
     public EffectivenessStatus? EffectivenessStatus { get; set; }
     
     // 新規追加項目（提供サイト対応）

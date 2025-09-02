@@ -6,6 +6,7 @@ public interface IRepository<T> where T : class
 {
     // 基本的なCRUD操作
     Task<T?> GetByIdAsync(int id);
+    Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<int> ids);
     Task<IEnumerable<T>> GetAllAsync();
     Task<T> AddAsync(T entity);
     Task<T> UpdateAsync(T entity);

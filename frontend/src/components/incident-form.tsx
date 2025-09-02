@@ -3,21 +3,63 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMasterData } from "@/hooks/useMasterData";
 
 import type { 
-  IncidentDto, 
+  Incident, 
   CreateIncidentDto, 
   UpdateIncidentDto, 
   Priority,
-  TroubleType,
-  DamageType,
-  Warehouse,
-  ShippingCompany,
   EffectivenessStatus 
-} from "@/lib/api-types";
+} from "@/lib/types";
+
+// 数値入力のバリデーション関数
+const validateNumericInput = (value: string, min: number = 0, max: number = Number.MAX_SAFE_INTEGER): number => {
+  // 入力値をトリム
+  const trimmedValue = value.trim();
+  
+  // 空文字列の場合は0を返す
+  if (trimmedValue === '') {
+    return 0;
+  }
+  
+  // 10進数としてパース
+  const parsedValue = parseInt(trimmedValue, 10);
+  
+  // 数値として有効かチェック
+  if (!Number.isFinite(parsedValue) || !Number.isInteger(parsedValue)) {
+    return 0;
+  }
+  
+  // 範囲チェックとクリッピング
+  if (parsedValue < min) {
+    return min;
+  }
+  
+  if (parsedValue > max) {
+    return max;
+  }
+  
+  return parsedValue;
+};
+
+// マスタデータIDの検証関数
+const validateMasterDataId = (id: any): boolean => {
+  return id != null && id !== undefined && Number.isInteger(id) && id > 0;
+};
+
+// 有効なIDを持つ最初のマスタデータ要素を取得する関数
+const getFirstValidId = <T extends { id: any }>(items: T[]): number | null => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return null;
+  }
+  
+  const validItem = items.find(item => validateMasterDataId(item?.id));
+  return validItem ? validItem.id : null;
+};
 
 interface IncidentFormProps {
-  incident?: IncidentDto | null;
+  incident?: Incident | null;
   onSubmit: (data: CreateIncidentDto | UpdateIncidentDto) => void;
   onCancel?: () => void;
   loading?: boolean;
@@ -25,15 +67,17 @@ interface IncidentFormProps {
 }
 
 export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hideButtons = false }: IncidentFormProps) {
+  const { troubleTypes, damageTypes, warehouses, shippingCompanies, loading: masterDataLoading, error: masterDataError } = useMasterData();
+  
   const [formData, setFormData] = React.useState({
     title: '',
     description: '',
     category: '', // This will be auto-generated
     priority: 'Medium' as Priority,
-    troubleType: 'ProductTrouble' as TroubleType,
-    damageType: 'DamageOrContamination' as DamageType,
-    warehouse: 'WarehouseA' as Warehouse,
-    shippingCompany: 'InHouse' as ShippingCompany,
+    troubleTypeId: 0,
+    damageTypeId: 0,
+    warehouseId: 0,
+    shippingCompanyId: 0,
     effectivenessStatus: 'NotImplemented' as EffectivenessStatus,
     resolution: '',
     
@@ -48,6 +92,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
     preventionMeasures: '', // 再発防止策
     effectivenessDate: '', // 有効性確認日
     effectivenessComment: '', // 有効性確認コメント
+    hasMasterDataError: false, // マスタデータエラーを追加
   });
 
   React.useEffect(() => {
@@ -57,10 +102,10 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         description: incident.description || '',
         category: incident.category || '',
         priority: incident.priority || 'Medium',
-        troubleType: incident.troubleType || 'ProductTrouble',
-        damageType: incident.damageType || 'DamageOrContamination',
-        warehouse: incident.warehouse || 'WarehouseA',
-        shippingCompany: incident.shippingCompany || 'InHouse',
+        troubleTypeId: incident.troubleTypeId || 0,
+        damageTypeId: incident.damageTypeId || 0,
+        warehouseId: incident.warehouseId || 0,
+        shippingCompanyId: incident.shippingCompanyId || 0,
         effectivenessStatus: incident.effectivenessStatus || 'NotImplemented',
         resolution: incident.resolution || '',
         
@@ -75,6 +120,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         preventionMeasures: incident.preventionMeasures || '',
         effectivenessDate: incident.effectivenessDate ? new Date(incident.effectivenessDate).toISOString().split('T')[0] : '',
         effectivenessComment: incident.effectivenessComment || '',
+        hasMasterDataError: false, // 編集時はエラーをリセット
       });
     } else {
       // 新規作成時はフォームをリセット
@@ -83,10 +129,10 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         description: '',
         category: '',
         priority: 'Medium',
-        troubleType: 'ProductTrouble',
-        damageType: 'DamageOrContamination',
-        warehouse: 'WarehouseA',
-        shippingCompany: 'InHouse',
+        troubleTypeId: 0,
+        damageTypeId: 0,
+        warehouseId: 0,
+        shippingCompanyId: 0,
         effectivenessStatus: 'NotImplemented',
         resolution: '',
         
@@ -101,27 +147,126 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         preventionMeasures: '',
         effectivenessDate: '',
         effectivenessComment: '',
+        hasMasterDataError: false, // 新規作成時はエラーをリセット
       });
     }
   }, [incident]);
+
+  // マスタデータが読み込まれた後に初期値を設定
+  React.useEffect(() => {
+    if (!masterDataLoading && troubleTypes.length > 0 && damageTypes.length > 0 && warehouses.length > 0 && shippingCompanies.length > 0) {
+      if (!incident) {
+        try {
+          // 新規作成時は有効なIDを持つ最初のマスタデータを選択
+          const validTroubleTypeId = getFirstValidId(troubleTypes);
+          const validDamageTypeId = getFirstValidId(damageTypes);
+          const validWarehouseId = getFirstValidId(warehouses);
+          const validShippingCompanyId = getFirstValidId(shippingCompanies);
+          
+          // 検証されたIDのみを設定
+          setFormData(prev => ({
+            ...prev,
+            troubleTypeId: validTroubleTypeId || 0,
+            damageTypeId: validDamageTypeId || 0,
+            warehouseId: validWarehouseId || 0,
+            shippingCompanyId: validShippingCompanyId || 0,
+            hasMasterDataError: false, // エラーフラグをリセット
+          }));
+          
+          // デバッグ用ログ（開発環境のみ）
+          if (process.env.NODE_ENV === 'development') {
+            console.log('マスタデータID設定完了:', {
+              troubleTypeId: validTroubleTypeId,
+              damageTypeId: validDamageTypeId,
+              warehouseId: validWarehouseId,
+              shippingCompanyId: validShippingCompanyId
+            });
+          }
+        } catch (error) {
+          console.error('マスタデータID設定中にエラーが発生しました:', error);
+          // エラーが発生した場合はデフォルト値（0）を設定
+          setFormData(prev => ({
+            ...prev,
+            troubleTypeId: 0,
+            damageTypeId: 0,
+            warehouseId: 0,
+            shippingCompanyId: 0,
+            hasMasterDataError: true, // エラーフラグを設定
+          }));
+        }
+      } else {
+        // 編集時もマスタデータが正常に読み込まれている場合はエラーフラグをリセット
+        setFormData(prev => ({
+          ...prev,
+          hasMasterDataError: false,
+        }));
+      }
+    } else {
+      // マスタデータが読み込まれていない場合はエラーフラグを設定
+      setFormData(prev => ({
+        ...prev,
+        hasMasterDataError: true,
+      }));
+    }
+  }, [masterDataLoading, troubleTypes, damageTypes, warehouses, shippingCompanies, incident]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // カテゴリを自動生成（トラブル種類 + 損傷種類）
-    const troubleTypeLabel = formData.troubleType === 'ProductTrouble' ? '商品トラブル' : '配送トラブル';
-          const damageTypeLabels = {
-        'None': 'なし',
-        'WrongShipment': '誤出荷',
-        'EarlyOrLateArrival': '早着・延着',
-        'Lost': '紛失',
-        'WrongDelivery': '誤配送',
-        'DamageOrContamination': '破損・汚損',
-        'OtherDeliveryMistake': 'その他の配送ミス',
-        'OtherProductAccident': 'その他の商品事故'
-      };
-    const damageTypeLabel = damageTypeLabels[formData.damageType];
-    const autoCategory = `${troubleTypeLabel} - ${damageTypeLabel}`;
+    const troubleType = troubleTypes.find(t => t.id === formData.troubleTypeId);
+    const damageType = damageTypes.find(d => d.id === formData.damageTypeId);
+    
+    // データ整合性チェック
+    let hasMissingMasterData = false;
+    let missingDataWarnings: string[] = [];
+    
+    if (!troubleType) {
+      hasMissingMasterData = true;
+      missingDataWarnings.push('トラブル種類');
+      console.warn('トラブル種類のマスタデータが見つかりません。ID:', formData.troubleTypeId);
+    }
+    
+    if (!damageType) {
+      hasMissingMasterData = true;
+      missingDataWarnings.push('損傷種類');
+      console.warn('損傷種類のマスタデータが見つかりません。ID:', formData.damageTypeId);
+    }
+    
+    // 曖昧性のないラベルを使用
+    const troubleTypeLabel = troubleType?.name || '未設定';
+    const damageTypeLabel = damageType?.name || '未設定';
+    
+    // autoCategory構築時の曖昧な値の連結を回避
+    let autoCategory: string;
+    if (troubleType && damageType) {
+      autoCategory = `${troubleTypeLabel} - ${damageTypeLabel}`;
+    } else if (troubleType) {
+      autoCategory = `${troubleTypeLabel} - 損傷種類未設定`;
+    } else if (damageType) {
+      autoCategory = `トラブル種類未設定 - ${damageTypeLabel}`;
+    } else {
+      autoCategory = 'カテゴリ未設定';
+    }
+    
+    // マスタデータが不足している場合は警告を表示
+    if (hasMissingMasterData) {
+      console.warn(`マスタデータが不足しています: ${missingDataWarnings.join(', ')}`);
+      // フォームエラーフラグを設定（必要に応じてUIに表示）
+      setFormData(prev => ({ ...prev, hasMasterDataError: true }));
+      
+      // ユーザーに確認を求める
+      const confirmSubmit = window.confirm(
+        `マスタデータが不足しています（${missingDataWarnings.join(', ')}）。\n` +
+        'カテゴリが正しく生成されない可能性がありますが、送信を続行しますか？'
+      );
+      
+      if (!confirmSubmit) {
+        return; // 送信をキャンセル
+      }
+    } else {
+      setFormData(prev => ({ ...prev, hasMasterDataError: false }));
+    }
     
     onSubmit({
       ...formData,
@@ -133,8 +278,62 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
 
 
 
+  // マスタデータの読み込み中またはエラー状態の場合はローディング表示
+  if (masterDataLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-logistics-blue mx-auto mb-4"></div>
+          <p className="text-gray-600">マスタデータを読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (masterDataError) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <p className="text-red-600 font-medium mb-2">エラーが発生しました</p>
+          <p className="text-gray-600">{masterDataError}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-logistics-blue hover:bg-logistics-blue/90 text-white"
+          >
+            再試行
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
          <form onSubmit={handleSubmit} className="space-y-4 bg-gray-100 p-4 rounded-lg w-full">
+      {/* マスタデータエラーメッセージ */}
+      {formData.hasMasterDataError && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">マスタデータの警告</h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>一部のマスタデータが見つかりません。カテゴリが正しく生成されない可能性があります。</p>
+                <p className="mt-1">詳細はブラウザのコンソールを確認してください。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
                  {/* 左列: 発生経緯・トラブル詳細 */}
          <div className="space-y-4">
@@ -195,15 +394,25 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
              <div className="space-y-3 mb-6">
                <Label htmlFor="troubleType" className="text-sm font-medium text-gray-700">トラブル種類 *</Label>
                <Select 
-                 value={formData.troubleType} 
-                 onValueChange={(value) => setFormData(prev => ({ ...prev, troubleType: value as TroubleType }))}
+                 value={formData.troubleTypeId.toString()} 
+                 onValueChange={(value) => setFormData(prev => ({ ...prev, troubleTypeId: parseInt(value) }))}
+                 disabled={masterDataLoading}
                >
                  <SelectTrigger className="border-gray-300 focus:ring-2 focus:ring-logistics-blue">
-                   <SelectValue placeholder="トラブル種類を選択" />
+                   <SelectValue placeholder={masterDataLoading ? "読み込み中..." : "トラブル種類を選択"} />
                  </SelectTrigger>
                  <SelectContent>
-                   <SelectItem value="ProductTrouble">商品トラブル</SelectItem>
-                   <SelectItem value="DeliveryTrouble">配送トラブル</SelectItem>
+                   {troubleTypes.map((troubleType) => (
+                     <SelectItem key={troubleType.id} value={troubleType.id.toString()}>
+                       <div className="flex items-center gap-2">
+                         <div 
+                           className="w-3 h-3 rounded-full" 
+                           style={{ backgroundColor: troubleType.color }}
+                         />
+                         {troubleType.name}
+                       </div>
+                     </SelectItem>
+                   ))}
                  </SelectContent>
                </Select>
              </div>
@@ -212,20 +421,24 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
             <div className="space-y-3 mb-6">
               <Label htmlFor="damageType" className="text-sm font-medium text-gray-700">損傷の種類 *</Label>
               <Select 
-                value={formData.damageType} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, damageType: value as DamageType }))}
+                value={formData.damageTypeId.toString()} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, damageTypeId: parseInt(value) }))}
+                disabled={masterDataLoading}
               >
                 <SelectTrigger className="border-gray-300 focus:ring-2 focus:ring-logistics-blue">
-                  <SelectValue placeholder="まずトラブル種類を選択" />
+                  <SelectValue placeholder={masterDataLoading ? "読み込み中..." : "損傷の種類を選択"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WrongShipment">誤出荷</SelectItem>
-                  <SelectItem value="EarlyOrLateArrival">早着・延着</SelectItem>
-                  <SelectItem value="Lost">紛失</SelectItem>
-                  <SelectItem value="WrongDelivery">誤配送</SelectItem>
-                  <SelectItem value="DamageOrContamination">破損・汚損</SelectItem>
-                  <SelectItem value="OtherDeliveryMistake">その他の配送ミス</SelectItem>
-                  <SelectItem value="OtherProductAccident">その他の商品事故</SelectItem>
+                  {damageTypes.map((damageType) => (
+                    <SelectItem key={damageType.id} value={damageType.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                          {damageType.category}
+                        </span>
+                        {damageType.name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -238,7 +451,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
                   id="totalShipments"
                   type="number"
                   value={formData.totalShipments}
-                  onChange={(e) => setFormData(prev => ({ ...prev, totalShipments: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, totalShipments: validateNumericInput(e.target.value) }))}
                   placeholder="0"
                   className="border-gray-300 focus:ring-2 focus:ring-logistics-blue"
                 />
@@ -249,7 +462,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
                   id="defectiveItems"
                   type="number"
                   value={formData.defectiveItems}
-                  onChange={(e) => setFormData(prev => ({ ...prev, defectiveItems: parseInt(e.target.value) || 0 }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, defectiveItems: validateNumericInput(e.target.value) }))}
                   placeholder="0"
                   className="border-gray-300 focus:ring-2 focus:ring-logistics-blue"
                 />
@@ -293,33 +506,48 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
               <div className="space-y-2">
                 <Label htmlFor="warehouse" className="text-sm font-medium text-gray-700">出荷元倉庫 *</Label>
                 <Select 
-                  value={formData.warehouse} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, warehouse: value as Warehouse }))}
+                  value={formData.warehouseId.toString()} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, warehouseId: parseInt(value) }))}
+                  disabled={masterDataLoading}
                 >
                   <SelectTrigger className="border-gray-300 focus:ring-2 focus:ring-logistics-blue">
-                    <SelectValue placeholder="選択..." />
+                    <SelectValue placeholder={masterDataLoading ? "読み込み中..." : "選択..."} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="WarehouseA">A倉庫</SelectItem>
-                    <SelectItem value="WarehouseB">B倉庫</SelectItem>
-                    <SelectItem value="WarehouseC">C倉庫</SelectItem>
+                    {warehouses.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          {warehouse.name}
+                          {warehouse.location && (
+                            <span className="text-xs text-gray-500">({warehouse.location})</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="shippingCompany" className="text-sm font-medium text-gray-700">運送会社名 *</Label>
                 <Select 
-                  value={formData.shippingCompany} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, shippingCompany: value as ShippingCompany }))}
+                  value={formData.shippingCompanyId.toString()} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, shippingCompanyId: parseInt(value) }))}
+                  disabled={masterDataLoading}
                 >
                   <SelectTrigger className="border-gray-300 focus:ring-2 focus:ring-logistics-blue">
-                    <SelectValue placeholder="選択..." />
+                    <SelectValue placeholder={masterDataLoading ? "読み込み中..." : "選択..."} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="InHouse">庫内</SelectItem>
-                    <SelectItem value="Charter">チャーター</SelectItem>
-                    <SelectItem value="ATransport">A運輸</SelectItem>
-                    <SelectItem value="BExpress">B急便</SelectItem>
+                    {shippingCompanies.map((shippingCompany) => (
+                      <SelectItem key={shippingCompany.id} value={shippingCompany.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          {shippingCompany.name}
+                          <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                            {shippingCompany.companyType}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -487,7 +715,12 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
            <Button 
              type="submit" 
              disabled={loading}
-             className="bg-logistics-blue hover:bg-logistics-blue/90 text-white"
+             className={`${
+               formData.hasMasterDataError 
+                 ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                 : 'bg-logistics-blue hover:bg-logistics-blue/90 text-white'
+             }`}
+             title={formData.hasMasterDataError ? 'マスタデータエラーがありますが、送信は可能です' : ''}
            >
              {loading ? '保存中...' : (incident ? '保存' : '作成')}
            </Button>

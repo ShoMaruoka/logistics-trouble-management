@@ -1,23 +1,14 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
-import type { IncidentDto } from "@/lib/api-types";
-import { 
-  getTroubleTypeName, 
-  getDamageTypeName, 
-  getWarehouseName, 
-  getShippingCompanyName, 
-  getEffectivenessStatusName,
-  getTroubleTypeColor,
-  getEffectivenessStatusColor
-} from "@/lib/enumHelpers";
+import type { Incident } from "@/lib/types";
 
 interface IncidentListProps {
-  incidents: IncidentDto[];
-  requestSort: (key: keyof IncidentDto) => void;
-  sortConfig: { key: keyof IncidentDto; direction: 'ascending' | 'descending' } | null;
-  onEdit: (incident: IncidentDto) => void;
-  onDelete?: (incident: IncidentDto) => void;
+  incidents: Incident[];
+  requestSort: (key: keyof Incident) => void;
+  sortConfig: { key: keyof Incident; direction: 'ascending' | 'descending' } | null;
+  onEdit: (incident: Incident) => void;
+  onDelete?: (incident: Incident) => void;
   loading?: boolean;
 }
 
@@ -29,7 +20,7 @@ export function IncidentList({
   onDelete,
   loading = false 
 }: IncidentListProps) {
-  const getSortIcon = (key: keyof IncidentDto) => {
+  const getSortIcon = (key: keyof Incident) => {
     if (sortConfig?.key !== key) return "↕";
     return sortConfig.direction === 'ascending' ? "↑" : "↓";
   };
@@ -66,34 +57,34 @@ export function IncidentList({
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('troubleType')}
+                onClick={() => requestSort('troubleTypeId')}
                 className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                トラブル種類 {getSortIcon('troubleType')}
+                トラブル種類 {getSortIcon('troubleTypeId')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('damageType')}
+                onClick={() => requestSort('damageTypeId')}
                 className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                損傷の種類 {getSortIcon('damageType')}
+                損傷の種類 {getSortIcon('damageTypeId')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('warehouse')}
+                onClick={() => requestSort('warehouseId')}
                 className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                出荷元倉庫 {getSortIcon('warehouse')}
+                出荷元倉庫 {getSortIcon('warehouseId')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
               <button
-                onClick={() => requestSort('shippingCompany')}
+                onClick={() => requestSort('shippingCompanyId')}
                 className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded font-medium"
               >
-                運送会社名 {getSortIcon('shippingCompany')}
+                運送会社名 {getSortIcon('shippingCompanyId')}
               </button>
             </th>
             <th className="border border-gray-300 px-4 py-2 text-left">
@@ -118,22 +109,31 @@ export function IncidentList({
                 {new Date(incident.occurrenceDate).toLocaleDateString('ja-JP')}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTroubleTypeColor(incident.troubleType)}`}>
-                  {getTroubleTypeName(incident.troubleType)}
+                <span 
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
+                  style={{ backgroundColor: incident.troubleTypeColor }}
+                >
+                  {incident.troubleTypeName}
                 </span>
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getDamageTypeName(incident.damageType)}
+                {incident.damageTypeName}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getWarehouseName(incident.warehouse)}
+                {incident.warehouseName}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {getShippingCompanyName(incident.shippingCompany)}
+                {incident.shippingCompanyName}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getEffectivenessStatusColor(incident.effectivenessStatus)}`}>
-                  {getEffectivenessStatusName(incident.effectivenessStatus)}
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  incident.effectivenessStatus === 'Implemented' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {incident.effectivenessStatus === 'Implemented' 
+                    ? '実施済み' 
+                    : '未実施'}
                 </span>
               </td>
               <td className="border border-gray-300 px-4 py-2">

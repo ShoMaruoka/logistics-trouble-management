@@ -18,7 +18,7 @@ import type {
   AttachmentDto,
   AttachmentSearchDto,
   CreateAttachmentDto
-} from "@/lib/api-types";
+} from "@/lib/types";
 
 export default function AttachmentsPage() {
   // 状態管理

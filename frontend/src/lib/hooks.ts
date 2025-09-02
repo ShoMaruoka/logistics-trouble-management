@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient, ApiError } from './api-client';
 import type {
-	IncidentDto,
+	Incident,
 	CreateIncidentDto,
 	UpdateIncidentDto,
 	IncidentSearchDto,
@@ -19,7 +19,7 @@ import type {
 	UpdateEffectivenessDto,
 	EffectivenessSearchDto,
 	EffectivenessSummaryDto,
-} from './api-types';
+} from './types';
 
 // 共通の状態管理
 interface ApiState<T> {
@@ -30,7 +30,7 @@ interface ApiState<T> {
 
 // インシデント関連Hooks
 export function useIncidents(searchParams?: IncidentSearchDto) {
-	const [state, setState] = useState<ApiState<PagedResultDto<IncidentDto>>>({
+	const [state, setState] = useState<ApiState<PagedResultDto<Incident>>>({
 		data: null,
 		loading: true,
 		error: null,
@@ -55,7 +55,7 @@ export function useIncidents(searchParams?: IncidentSearchDto) {
 }
 
 export function useIncident(id: number) {
-	const [state, setState] = useState<ApiState<IncidentDto>>({
+	const [state, setState] = useState<ApiState<Incident>>({
 		data: null,
 		loading: true,
 		error: null,
@@ -82,7 +82,7 @@ export function useIncident(id: number) {
 }
 
 export function useCreateIncident() {
-	const [state, setState] = useState<ApiState<IncidentDto>>({
+	const [state, setState] = useState<ApiState<Incident>>({
 		data: null,
 		loading: false,
 		error: null,
@@ -105,7 +105,7 @@ export function useCreateIncident() {
 }
 
 export function useUpdateIncident() {
-	const [state, setState] = useState<ApiState<IncidentDto>>({
+	const [state, setState] = useState<ApiState<Incident>>({
 		data: null,
 		loading: false,
 		error: null,
