@@ -238,7 +238,7 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
                 email,
                 "Test",
                 "User",
-                UserRole.User
+                1 // Default role ID (Clerk)
             );
         }
 

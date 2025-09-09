@@ -1,0 +1,331 @@
+using LogisticsTroubleManagement.Core.Services;
+using LogisticsTroubleManagement.Core.DTOs;
+using LogisticsTroubleManagement.Core.Exceptions;
+using LogisticsTroubleManagement.Domain.Repositories;
+using LogisticsTroubleManagement.Domain.Entities;
+using Microsoft.Extensions.Options;
+using LogisticsTroubleManagement.Core.Configuration;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace LogisticsTroubleManagement.Infrastructure.Services;
+
+/// <summary>
+/// 認証サービスの実装
+/// </summary>
+public class AuthenticationService : IAuthenticationService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IJwtService _jwtService;
+    private readonly IPasswordService _passwordService;
+    private readonly AuthenticationSettings _authSettings;
+
+    public AuthenticationService(
+        IUserRepository userRepository,
+        IJwtService jwtService,
+        IPasswordService passwordService,
+        IOptions<AuthenticationSettings> authSettings)
+    {
+        _userRepository = userRepository;
+        _jwtService = jwtService;
+        _passwordService = passwordService;
+        _authSettings = authSettings.Value;
+    }
+
+    /// <summary>
+    /// ユーザー認証
+    /// </summary>
+    /// <param name="loginDto">ログイン情報</param>
+    /// <returns>ログイン応答</returns>
+    public async Task<LoginResponseDto> AuthenticateAsync(LoginDto loginDto)
+    {
+        // ユーザーの検索（ユーザー名またはメールアドレス）
+        var user = await _userRepository.GetByUsernameOrEmailAsync(loginDto.UsernameOrEmail);
+        if (user == null)
+        {
+            throw new UserNotFoundException("ユーザーが存在しません");
+        }
+
+        // ユーザーの有効性チェック
+        if (!user.IsActive)
+        {
+            throw new UserInactiveException("ユーザーが無効です");
+        }
+
+        // パスワードの検証
+        if (!_passwordService.VerifyPassword(loginDto.Password, user.PasswordHash))
+        {
+            throw new InvalidPasswordException("パスワードが無効です");
+        }
+
+        // ロール情報の取得
+        var role = await _userRepository.GetUserRoleAsync(user.Id);
+        if (string.IsNullOrEmpty(role))
+        {
+            throw new InvalidOperationException("ユーザーロールが設定されていません");
+        }
+
+        // クレーム情報の生成
+        var claims = _jwtService.GenerateClaims(user.Id, user.Username, role);
+
+        // アクセストークンの生成
+        var accessToken = _jwtService.GenerateAccessToken(claims);
+
+        // リフレッシュトークンの生成
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        // リフレッシュトークンの保存（ハッシュ化して保存）
+        var refreshTokenHash = ComputeHash(refreshToken);
+        await _userRepository.SaveRefreshTokenAsync(user.Id, refreshTokenHash, DateTime.UtcNow.AddDays(_authSettings.Jwt.RefreshTokenExpirationDays));
+
+        // 最終ログイン日時の更新
+        await _userRepository.UpdateLastLoginAsync(user.Id, DateTime.UtcNow);
+
+        // ユーザー情報の更新
+        await _userRepository.UpdateAsync(user);
+
+        return new LoginResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_authSettings.Jwt.AccessTokenExpirationMinutes),
+            User = new UserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                RoleName = role,
+                RoleId = user.Role,
+                LastLoginAt = user.LastLoginAt,
+                IsActive = user.IsActive
+            }
+        };
+    }
+
+    /// <summary>
+    /// トークンリフレッシュ
+    /// </summary>
+    /// <param name="refreshTokenDto">リフレッシュトークン情報</param>
+    /// <returns>新しいトークン情報</returns>
+    public async Task<RefreshTokenResponseDto> RefreshTokenAsync(RefreshTokenDto refreshTokenDto)
+    {
+        // リフレッシュトークンの検証
+        var refreshTokenHash = ComputeHash(refreshTokenDto.RefreshToken);
+        var userId = await _userRepository.GetUserIdByRefreshTokenAsync(refreshTokenHash);
+        
+        if (userId == null)
+        {
+            throw new InvalidTokenException("リフレッシュトークンが無効です");
+        }
+
+        // ユーザー情報の取得
+        var user = await _userRepository.GetByIdAsync(userId.Value);
+        if (user == null || !user.IsActive)
+        {
+            throw new UserNotFoundException("ユーザーが存在しないか、無効です");
+        }
+
+        // ロール情報の取得
+        var role = await _userRepository.GetUserRoleAsync(user.Id);
+        if (string.IsNullOrEmpty(role))
+        {
+            throw new InvalidOperationException("ユーザーロールが設定されていません");
+        }
+
+        // 新しいアクセストークンの生成
+        var claims = _jwtService.GenerateClaims(user.Id, user.Username, role);
+        var newAccessToken = _jwtService.GenerateAccessToken(claims);
+
+        // 新しいリフレッシュトークンの生成
+        var newRefreshToken = _jwtService.GenerateRefreshToken();
+        var newRefreshTokenHash = ComputeHash(newRefreshToken);
+
+        // 古いリフレッシュトークンの無効化と新しいトークンの保存
+        await _userRepository.RevokeRefreshTokenAsync(refreshTokenHash, newRefreshTokenHash, "replaced");
+        await _userRepository.SaveRefreshTokenAsync(user.Id, newRefreshTokenHash, DateTime.UtcNow.AddDays(_authSettings.Jwt.RefreshTokenExpirationDays));
+
+        return new RefreshTokenResponseDto
+        {
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(_authSettings.Jwt.AccessTokenExpirationMinutes)
+        };
+    }
+
+    /// <summary>
+    /// ログアウト
+    /// </summary>
+    /// <param name="logoutDto">ログアウト情報</param>
+    /// <returns>処理結果</returns>
+    public async Task<bool> LogoutAsync(LogoutDto logoutDto)
+    {
+        var refreshTokenHash = ComputeHash(logoutDto.RefreshToken);
+        await _userRepository.RevokeRefreshTokenAsync(refreshTokenHash, null, "logout");
+        return true;
+    }
+
+    /// <summary>
+    /// パスワード変更
+    /// </summary>
+    /// <param name="userId">ユーザーID</param>
+    /// <param name="changePasswordDto">パスワード変更情報</param>
+    /// <returns>処理結果</returns>
+    public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordDto changePasswordDto)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new UserNotFoundException("ユーザーが存在しません");
+        }
+
+        // 現在のパスワードの検証
+        if (!_passwordService.VerifyPassword(changePasswordDto.CurrentPassword, user.PasswordHash))
+        {
+            throw new InvalidPasswordException("現在のパスワードが無効です");
+        }
+
+        // 新しいパスワードの強度チェック
+        var strength = _passwordService.CheckPasswordStrength(changePasswordDto.NewPassword);
+        if (strength == IPasswordService.PasswordStrength.Weak)
+        {
+            throw new InvalidPasswordException("新しいパスワードの強度が弱すぎます");
+        }
+
+        // 新しいパスワードのハッシュ化
+        var newPasswordHash = _passwordService.HashPassword(changePasswordDto.NewPassword);
+
+        // パスワードの更新
+        user.PasswordHash = newPasswordHash;
+        user.TokenVersion++; // トークンの無効化
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user);
+
+        // 既存のリフレッシュトークンを全て無効化
+        await _userRepository.RevokeAllRefreshTokensAsync(userId, "password_changed");
+
+        return true;
+    }
+
+    /// <summary>
+    /// パスワードリセット要求
+    /// </summary>
+    /// <param name="forgotPasswordDto">パスワードリセット要求情報</param>
+    /// <returns>処理結果</returns>
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
+    {
+        var user = await _userRepository.GetByEmailAsync(forgotPasswordDto.Email);
+        if (user == null)
+        {
+            // セキュリティのため、ユーザーが存在しない場合でも成功を返す
+            return true;
+        }
+
+        // パスワードリセットトークンの生成と保存
+        var resetToken = _jwtService.GenerateRefreshToken();
+        var resetTokenHash = ComputeHash(resetToken);
+        
+        // リセットトークンの有効期限は1時間
+        await _userRepository.SavePasswordResetTokenAsync(user.Id, resetTokenHash, DateTime.UtcNow.AddHours(1));
+
+        // TODO: メール送信処理の実装
+        // 実際の実装では、リセットトークンをメールで送信する
+
+        return true;
+    }
+
+    /// <summary>
+    /// パスワードリセット
+    /// </summary>
+    /// <param name="resetPasswordDto">パスワードリセット情報</param>
+    /// <returns>処理結果</returns>
+    public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
+    {
+        var resetTokenHash = ComputeHash(resetPasswordDto.ResetToken);
+        var userId = await _userRepository.GetUserIdByPasswordResetTokenAsync(resetTokenHash);
+        
+        if (userId == null)
+        {
+            throw new InvalidTokenException("パスワードリセットトークンが無効です");
+        }
+
+        var user = await _userRepository.GetByIdAsync(userId.Value);
+        if (user == null)
+        {
+            throw new UserNotFoundException("ユーザーが存在しません");
+        }
+
+        // 新しいパスワードの強度チェック
+        var strength = _passwordService.CheckPasswordStrength(resetPasswordDto.NewPassword);
+        if (strength == IPasswordService.PasswordStrength.Weak)
+        {
+            throw new InvalidPasswordException("新しいパスワードの強度が弱すぎます");
+        }
+
+        // 新しいパスワードのハッシュ化
+        var newPasswordHash = _passwordService.HashPassword(resetPasswordDto.NewPassword);
+
+        // パスワードの更新
+        user.PasswordHash = newPasswordHash;
+        user.TokenVersion++; // トークンの無効化
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user);
+
+        // パスワードリセットトークンの無効化
+        await _userRepository.RevokePasswordResetTokenAsync(resetTokenHash);
+
+        // 既存のリフレッシュトークンを全て無効化
+        await _userRepository.RevokeAllRefreshTokensAsync(userId.Value, "password_reset");
+
+        return true;
+    }
+
+    /// <summary>
+    /// ユーザー情報取得
+    /// </summary>
+    /// <param name="userId">ユーザーID</param>
+    /// <returns>ユーザー情報</returns>
+    public async Task<UserDto?> GetUserAsync(int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var role = await _userRepository.GetUserRoleAsync(user.Id);
+
+        return new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            RoleName = role ?? string.Empty,
+            RoleId = user.Role,
+            LastLoginAt = user.LastLoginAt,
+            IsActive = user.IsActive
+        };
+    }
+
+    /// <summary>
+    /// トークンの有効性確認
+    /// </summary>
+    /// <param name="token">トークン</param>
+    /// <returns>有効性</returns>
+    public async Task<bool> ValidateTokenAsync(string token)
+    {
+        return _jwtService.ValidateToken(token);
+    }
+
+    /// <summary>
+    /// トークンのハッシュ化
+    /// </summary>
+    /// <param name="token">トークン</param>
+    /// <returns>ハッシュ値</returns>
+    private static byte[] ComputeHash(string token)
+    {
+        using var sha256 = SHA256.Create();
+        return sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+    }
+}

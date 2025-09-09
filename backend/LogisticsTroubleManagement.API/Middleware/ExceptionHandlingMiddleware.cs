@@ -1,6 +1,7 @@
 using System.Net;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using LogisticsTroubleManagement.Core.Exceptions;
 
 namespace LogisticsTroubleManagement.API.Middleware;
 
@@ -70,6 +71,27 @@ public class ExceptionHandlingMiddleware
 
 			case UnauthorizedAccessException:
 				return (HttpStatusCode.Unauthorized, "認証が必要です。", "UNAUTHORIZED", null);
+
+			case ForbiddenException forbiddenException:
+				return (HttpStatusCode.Forbidden, forbiddenException.Message, "FORBIDDEN", null);
+
+			case InvalidTokenException invalidTokenException:
+				return (HttpStatusCode.Unauthorized, invalidTokenException.Message, "INVALID_TOKEN", null);
+
+			case TokenExpiredException tokenExpiredException:
+				return (HttpStatusCode.Unauthorized, tokenExpiredException.Message, "TOKEN_EXPIRED", null);
+
+			case AuthenticationRequiredException authRequiredException:
+				return (HttpStatusCode.Unauthorized, authRequiredException.Message, "AUTHENTICATION_REQUIRED", null);
+
+			case InvalidPasswordException invalidPasswordException:
+				return (HttpStatusCode.BadRequest, invalidPasswordException.Message, "INVALID_PASSWORD", null);
+
+			case UserNotFoundException userNotFoundException:
+				return (HttpStatusCode.NotFound, userNotFoundException.Message, "USER_NOT_FOUND", null);
+
+			case UserInactiveException userInactiveException:
+				return (HttpStatusCode.BadRequest, userInactiveException.Message, "USER_INACTIVE", null);
 
 			case DbUpdateException dbUpdateException:
 				return (HttpStatusCode.Conflict, dbUpdateException.InnerException?.Message ?? dbUpdateException.Message, "DB_UPDATE_ERROR", null);

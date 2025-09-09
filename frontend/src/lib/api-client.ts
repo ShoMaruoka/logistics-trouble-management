@@ -1,5 +1,7 @@
 // APIクライアント
 
+import { RefreshTokenManager } from './refresh-token-manager';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5169';
 
 class ApiError extends Error {
@@ -14,6 +16,23 @@ class ApiError extends Error {
 	}
 }
 
+// 認証トークン管理
+class TokenManager {
+	private static accessToken: string | null = null;
+
+	static setAccessToken(token: string | null) {
+		this.accessToken = token;
+	}
+
+	static getAccessToken(): string | null {
+		return this.accessToken;
+	}
+
+	static clearToken() {
+		this.accessToken = null;
+	}
+}
+
 class ApiClient {
 	private async request<T>(
 		endpoint: string,
@@ -21,11 +40,16 @@ class ApiClient {
 	): Promise<T> {
 		const url = `${API_BASE_URL}${endpoint}`;
 		
+		// 認証トークンを取得
+		const accessToken = TokenManager.getAccessToken();
+		
 		const config: RequestInit = {
 			headers: {
 				'Content-Type': 'application/json',
+				...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
 				...options.headers,
 			},
+			credentials: 'include', // クッキーを含める（リフレッシュトークン用）
 			...options,
 		};
 
@@ -76,6 +100,22 @@ class ApiClient {
 		}
 	}
 
+	// リフレッシュトークンでアクセストークンを更新
+	async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: string }> {
+		return this.request('/api/auth/refresh-token', {
+			method: 'POST',
+			body: JSON.stringify({ refreshToken }),
+		});
+	}
+
+	// リフレッシュトークンを無効化
+	async revokeToken(token: string, reason?: string): Promise<void> {
+		return this.request('/api/auth/revoke', {
+			method: 'POST',
+			body: JSON.stringify({ token, reason }),
+		});
+	}
+
 	// ファイルダウンロード用の特別なリクエストメソッド
 	private async downloadRequest(endpoint: string): Promise<Blob> {
 		const url = `${API_BASE_URL}${endpoint}`;
@@ -118,7 +158,16 @@ class ApiClient {
 		const queryString = params.toString();
 		const endpoint = `/api/incidents${queryString ? `?${queryString}` : ''}`;
 		
-		return this.request<PagedResultDto<Incident>>(endpoint);
+		const result = await this.request<PagedResultDto<Incident>>(endpoint);
+		
+		// デバッグログを追加
+		console.log('インシデント取得結果:', result);
+		if (result.items && result.items.length > 0) {
+			console.log('最初のインシデント:', result.items[0]);
+			console.log('プロパティ一覧:', Object.keys(result.items[0]));
+		}
+		
+		return result;
 	}
 
 	async getIncident(id: number): Promise<Incident> {
@@ -126,22 +175,42 @@ class ApiClient {
 	}
 
 	async createIncident(data: CreateIncidentDto): Promise<Incident> {
+		// プロパティ名を大文字に変換
+		const apiData = {
+			Title: data.title,
+			Description: data.description,
+			Category: data.category,
+			Priority: data.priority,
+			TroubleType: data.troubleTypeId,
+			DamageType: data.damageTypeId,
+			Warehouse: data.warehouseId,
+			ShippingCompany: data.shippingCompanyId,
+			IncidentDetails: data.incidentDetails,
+			TotalShipments: data.totalShipments,
+			DefectiveItems: data.defectiveItems,
+			OccurrenceDate: data.occurrenceDate,
+			OccurrenceLocation: data.occurrenceLocation,
+			Summary: data.summary,
+			EffectivenessStatus: data.effectivenessStatus,
+			EffectivenessDate: data.effectivenessDate,
+			EffectivenessComment: data.effectivenessComment,
+			ReportedById: data.reportedById
+		};
+
 		// 開発環境でのみログ出力（PII保護）
 		if (process.env.NODE_ENV === 'development') {
 			// センシティブなフィールドをサニタイズ
 			const sanitizedData = {
-				...data,
-				incidentDetails: data.incidentDetails ? '[REDACTED]' : undefined,
-				occurrenceLocation: data.occurrenceLocation ? '[REDACTED]' : undefined,
-				summary: data.summary ? '[REDACTED]' : undefined,
-				cause: data.cause ? '[REDACTED]' : undefined,
-				preventionMeasures: data.preventionMeasures ? '[REDACTED]' : undefined,
+				...apiData,
+				IncidentDetails: apiData.IncidentDetails ? '[REDACTED]' : undefined,
+				OccurrenceLocation: apiData.OccurrenceLocation ? '[REDACTED]' : undefined,
+				Summary: apiData.Summary ? '[REDACTED]' : undefined,
 			};
 			console.log('送信データ（サニタイズ済み）:', JSON.stringify(sanitizedData, null, 2));
 		}
 		return this.request<Incident>('/api/incidents', {
 			method: 'POST',
-			body: JSON.stringify(data),
+			body: JSON.stringify(apiData),
 		});
 	}
 
@@ -444,6 +513,29 @@ class ApiClient {
 	async healthCheck(): Promise<{ status: string; timestamp: string }> {
 		return this.request<{ status: string; timestamp: string }>('/health');
 	}
+
+	// 汎用HTTPメソッド
+	async get<T>(endpoint: string): Promise<T> {
+		return this.request<T>(endpoint, { method: 'GET' });
+	}
+
+	async post<T>(endpoint: string, data?: any): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: 'POST',
+			body: data ? JSON.stringify(data) : undefined,
+		});
+	}
+
+	async put<T>(endpoint: string, data?: any): Promise<T> {
+		return this.request<T>(endpoint, {
+			method: 'PUT',
+			body: data ? JSON.stringify(data) : undefined,
+		});
+	}
+
+	async delete<T>(endpoint: string): Promise<T> {
+		return this.request<T>(endpoint, { method: 'DELETE' });
+	}
 }
 
 // 型インポート
@@ -481,4 +573,4 @@ import type {
 
 // シングルトンインスタンス
 export const apiClient = new ApiClient();
-export { ApiError };
+export { ApiError, TokenManager };

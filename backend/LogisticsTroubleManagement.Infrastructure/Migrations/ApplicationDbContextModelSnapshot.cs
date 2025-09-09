@@ -138,6 +138,42 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.ToTable("AuditLogs", (string)null);
                 });
 
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.DamageType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DamageTypes");
+                });
+
             modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Effectiveness", b =>
                 {
                     b.Property<int>("Id")
@@ -219,7 +255,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<int>("DamageType")
+                    b.Property<int>("DamageTypeId")
                         .HasColumnType("int");
 
                     b.Property<int>("DefectiveItems")
@@ -270,7 +306,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.Property<DateTime?>("ResolvedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ShippingCompany")
+                    b.Property<int>("ShippingCompanyId")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -288,7 +324,7 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.Property<int>("TotalShipments")
                         .HasColumnType("int");
 
-                    b.Property<int>("TroubleType")
+                    b.Property<int>("TroubleTypeId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -296,16 +332,192 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<int>("Warehouse")
+                    b.Property<int>("WarehouseId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedToId");
 
+                    b.HasIndex("DamageTypeId");
+
                     b.HasIndex("ReportedById");
 
+                    b.HasIndex("ShippingCompanyId");
+
+                    b.HasIndex("TroubleTypeId");
+
+                    b.HasIndex("WarehouseId");
+
                     b.ToTable("Incidents", (string)null);
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("ReasonRevoked")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsRevoked", "ExpiresAt");
+
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.ShippingCompany", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CompanyType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactInfo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ShippingCompanies");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.TroubleType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TroubleTypes");
                 });
 
             modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.User", b =>
@@ -336,17 +548,33 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("LastPasswordChangeAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("Role")
+                    b.Property<int>("RoleId")
                         .HasColumnType("int");
+
+                    b.Property<int>("TokenVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -363,10 +591,50 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("RoleId");
+
                     b.HasIndex("Username")
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Warehouse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContactInfo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Warehouses");
                 });
 
             modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Attachment", b =>
@@ -428,15 +696,74 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                         .HasForeignKey("AssignedToId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("LogisticsTroubleManagement.Domain.Entities.DamageType", "DamageType")
+                        .WithMany("Incidents")
+                        .HasForeignKey("DamageTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("LogisticsTroubleManagement.Domain.Entities.User", "ReportedBy")
                         .WithMany("ReportedIncidents")
                         .HasForeignKey("ReportedById")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("LogisticsTroubleManagement.Domain.Entities.ShippingCompany", "ShippingCompany")
+                        .WithMany("Incidents")
+                        .HasForeignKey("ShippingCompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LogisticsTroubleManagement.Domain.Entities.TroubleType", "TroubleType")
+                        .WithMany("Incidents")
+                        .HasForeignKey("TroubleTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LogisticsTroubleManagement.Domain.Entities.Warehouse", "Warehouse")
+                        .WithMany("Incidents")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("AssignedTo");
 
+                    b.Navigation("DamageType");
+
                     b.Navigation("ReportedBy");
+
+                    b.Navigation("ShippingCompany");
+
+                    b.Navigation("TroubleType");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("LogisticsTroubleManagement.Domain.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.User", b =>
+                {
+                    b.HasOne("LogisticsTroubleManagement.Domain.Entities.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.DamageType", b =>
+                {
+                    b.Navigation("Incidents");
                 });
 
             modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Incident", b =>
@@ -448,6 +775,21 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.Navigation("Effectiveness");
                 });
 
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Role", b =>
+                {
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.ShippingCompany", b =>
+                {
+                    b.Navigation("Incidents");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.TroubleType", b =>
+                {
+                    b.Navigation("Incidents");
+                });
+
             modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.User", b =>
                 {
                     b.Navigation("AssignedIncidents");
@@ -456,9 +798,16 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
 
                     b.Navigation("MeasuredEffectiveness");
 
+                    b.Navigation("RefreshTokens");
+
                     b.Navigation("ReportedIncidents");
 
                     b.Navigation("UploadedAttachments");
+                });
+
+            modelBuilder.Entity("LogisticsTroubleManagement.Domain.Entities.Warehouse", b =>
+                {
+                    b.Navigation("Incidents");
                 });
 #pragma warning restore 612, 618
         }

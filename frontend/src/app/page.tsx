@@ -15,8 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IncidentForm } from "@/components/incident-form";
-import { Dashboard } from "@/components/dashboard";
-import { IncidentManagement } from "@/components/incident-management";
+import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import type { Incident, CreateIncidentDto, UpdateIncidentDto } from "@/lib/types";
 import { Logo } from "@/components/icons";
 import { 
@@ -127,8 +127,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
         {/* ヘッダー */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
@@ -147,14 +148,8 @@ export default function Home() {
           </Button>
         </div>
 
-        {/* ダッシュボード */}
-        <Dashboard />
-
-        {/* インシデント管理 */}
-        <IncidentManagement 
-          onEdit={handleEdit}
-          onDelete={handleDeleteIncident}
-        />
+        {/* ロール別ダッシュボード */}
+        <RoleBasedDashboard />
 
         {/* 作成・編集ダイアログ */}
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -207,7 +202,8 @@ export default function Home() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

@@ -23,7 +23,23 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual async Task<IEnumerable<T>> GetByIdsAsync(IEnumerable<int> ids)
     {
-        return await _dbSet.Where(e => ids.Contains(EF.Property<int>(e, "Id"))).ToListAsync();
+        var idList = ids.ToList();
+        if (!idList.Any())
+        {
+            return Enumerable.Empty<T>();
+        }
+        
+        // 個別にGetByIdAsyncを呼び出すアプローチ
+        var results = new List<T>();
+        foreach (var id in idList)
+        {
+            var entity = await GetByIdAsync(id);
+            if (entity != null)
+            {
+                results.Add(entity);
+            }
+        }
+        return results;
     }
 
     public virtual async Task<IEnumerable<T>> GetAllAsync()

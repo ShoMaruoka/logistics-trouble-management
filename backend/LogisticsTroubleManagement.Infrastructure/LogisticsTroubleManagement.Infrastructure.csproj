@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LogisticsTroubleManagement.Domain\LogisticsTroubleManagement.Domain.csproj" />
+    <ProjectReference Include="..\LogisticsTroubleManagement.Core\LogisticsTroubleManagement.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

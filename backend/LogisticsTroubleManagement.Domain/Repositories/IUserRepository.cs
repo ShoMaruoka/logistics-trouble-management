@@ -8,7 +8,9 @@ public interface IUserRepository : IRepository<User>
     // ユーザー固有のクエリメソッド
     Task<User?> GetByUsernameAsync(string username);
     Task<User?> GetByEmailAsync(string email);
-    Task<IEnumerable<User>> GetByRoleAsync(UserRole role);
+    Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail);
+    Task<IEnumerable<User>> GetByRoleIdAsync(int roleId);
+    Task<IEnumerable<User>> GetByRoleNameAsync(string roleName);
     Task<IEnumerable<User>> GetActiveUsersAsync();
     Task<bool> UsernameExistsAsync(string username);
     Task<bool> EmailExistsAsync(string email);

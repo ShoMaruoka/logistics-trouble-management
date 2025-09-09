@@ -106,24 +106,24 @@ export function IncidentList({
               onClick={() => onEdit(incident)}
             >
               <td className="border border-gray-300 px-4 py-2">
-                {new Date(incident.occurrenceDate).toLocaleDateString('ja-JP')}
+                {incident.occurrenceDate ? new Date(incident.occurrenceDate).toLocaleDateString('ja-JP') : '未設定'}
               </td>
               <td className="border border-gray-300 px-4 py-2">
                 <span 
                   className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
                   style={{ backgroundColor: incident.troubleTypeColor }}
                 >
-                  {incident.troubleTypeName}
+                  {incident.troubleTypeName || '未設定'}
                 </span>
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {incident.damageTypeName}
+                {incident.damageTypeName || '未設定'}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {incident.warehouseName}
+                {incident.warehouseName || '未設定'}
               </td>
               <td className="border border-gray-300 px-4 py-2">
-                {incident.shippingCompanyName}
+                {incident.shippingCompanyName || '未設定'}
               </td>
               <td className="border border-gray-300 px-4 py-2">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

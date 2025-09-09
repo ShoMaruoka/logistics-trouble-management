@@ -56,7 +56,21 @@ public class MasterDataResolverService : IMasterDataResolverService
     {
         try
         {
-            return await _damageTypeRepository.GetByIdAsync(id);
+            _logger.LogInformation("ダメージタイプ取得開始: ID={Id}", id);
+            
+            // 直接DbSetを使用してテスト
+            var result = await _damageTypeRepository.GetByIdAsync(id);
+            
+            if (result == null)
+            {
+                _logger.LogWarning("ダメージタイプが見つかりません: ID={Id}", id);
+            }
+            else
+            {
+                _logger.LogInformation("ダメージタイプ取得成功: ID={Id}, Name={Name}", id, result.Name);
+            }
+            
+            return result;
         }
         catch (Exception ex)
         {
@@ -88,7 +102,21 @@ public class MasterDataResolverService : IMasterDataResolverService
     {
         try
         {
-            return await _shippingCompanyRepository.GetByIdAsync(id);
+            _logger.LogInformation("運送会社取得開始: ID={Id}", id);
+            
+            // 直接DbSetを使用してテスト
+            var result = await _shippingCompanyRepository.GetByIdAsync(id);
+            
+            if (result == null)
+            {
+                _logger.LogWarning("運送会社が見つかりません: ID={Id}", id);
+            }
+            else
+            {
+                _logger.LogInformation("運送会社取得成功: ID={Id}, Name={Name}", id, result.Name);
+            }
+            
+            return result;
         }
         catch (Exception ex)
         {
@@ -105,14 +133,13 @@ public class MasterDataResolverService : IMasterDataResolverService
     {
         try
         {
-            var troubleTypeTask = GetTroubleTypeAsync(troubleTypeId);
-            var damageTypeTask = GetDamageTypeAsync(damageTypeId);
-            var warehouseTask = GetWarehouseAsync(warehouseId);
-            var shippingCompanyTask = GetShippingCompanyAsync(shippingCompanyId);
+            // 個別に取得（並行処理の問題を回避）
+            var troubleType = await GetTroubleTypeAsync(troubleTypeId);
+            var damageType = await GetDamageTypeAsync(damageTypeId);
+            var warehouse = await GetWarehouseAsync(warehouseId);
+            var shippingCompany = await GetShippingCompanyAsync(shippingCompanyId);
 
-            await Task.WhenAll(troubleTypeTask, damageTypeTask, warehouseTask, shippingCompanyTask);
-
-            return (troubleTypeTask.Result, damageTypeTask.Result, warehouseTask.Result, shippingCompanyTask.Result);
+            return (troubleType, damageType, warehouse, shippingCompany);
         }
         catch (Exception ex)
         {
@@ -140,6 +167,9 @@ public class MasterDataResolverService : IMasterDataResolverService
             var userIds = incidents.SelectMany(i => new[] { i.ReportedById }
                 .Concat(i.AssignedToId.HasValue ? new[] { i.AssignedToId.Value } : Enumerable.Empty<int>()))
                 .Distinct().ToList();
+
+            _logger.LogInformation("マスタデータバッチ取得開始: TroubleTypeIds={TroubleTypeIds}, DamageTypeIds={DamageTypeIds}, WarehouseIds={WarehouseIds}, ShippingCompanyIds={ShippingCompanyIds}", 
+                string.Join(",", troubleTypeIds), string.Join(",", damageTypeIds), string.Join(",", warehouseIds), string.Join(",", shippingCompanyIds));
 
             // 並行してマスタデータを取得
             var tasks = new List<Task>();
@@ -175,6 +205,9 @@ public class MasterDataResolverService : IMasterDataResolverService
                 await Task.WhenAll(tasks);
             }
 
+            _logger.LogInformation("マスタデータバッチ取得完了: TroubleTypes={TroubleTypesCount}, DamageTypes={DamageTypesCount}, Warehouses={WarehousesCount}, ShippingCompanies={ShippingCompaniesCount}", 
+                batch.TroubleTypes.Count, batch.DamageTypes.Count, batch.Warehouses.Count, batch.ShippingCompanies.Count);
+
             return batch;
         }
         catch (Exception ex)
@@ -207,11 +240,14 @@ public class MasterDataResolverService : IMasterDataResolverService
     {
         try
         {
+            _logger.LogInformation("ダメージタイプのバッチ取得開始: IDs={Ids}", string.Join(",", ids));
             var damageTypes = await _damageTypeRepository.GetByIdsAsync(ids);
+            _logger.LogInformation("ダメージタイプ取得結果: {Count}件", damageTypes.Count());
             foreach (var damageType in damageTypes)
             {
                 if (damageType != null)
                 {
+                    _logger.LogInformation("ダメージタイプ追加: ID={Id}, Name={Name}", damageType.Id, damageType.Name);
                     batch.DamageTypes[damageType.Id] = damageType;
                 }
             }
@@ -245,11 +281,14 @@ public class MasterDataResolverService : IMasterDataResolverService
     {
         try
         {
+            _logger.LogInformation("配送会社のバッチ取得開始: IDs={Ids}", string.Join(",", ids));
             var shippingCompanies = await _shippingCompanyRepository.GetByIdsAsync(ids);
+            _logger.LogInformation("配送会社取得結果: {Count}件", shippingCompanies.Count());
             foreach (var shippingCompany in shippingCompanies)
             {
                 if (shippingCompany != null)
                 {
+                    _logger.LogInformation("配送会社追加: ID={Id}, Name={Name}", shippingCompany.Id, shippingCompany.Name);
                     batch.ShippingCompanies[shippingCompany.Id] = shippingCompany;
                 }
             }

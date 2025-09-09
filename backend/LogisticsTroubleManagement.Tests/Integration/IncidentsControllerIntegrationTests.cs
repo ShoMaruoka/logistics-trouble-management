@@ -262,13 +262,21 @@ namespace LogisticsTroubleManagement.Tests.Integration
 
         private static void SeedTestData(ApplicationDbContext context)
         {
+            // テストロールを作成
+            var role = LogisticsTroubleManagement.Domain.Entities.Role.Create(
+                "Clerk",
+                "一般職員"
+            );
+            context.Roles.Add(role);
+            context.SaveChanges();
+
             // テストユーザーを作成
             var user = LogisticsTroubleManagement.Domain.Entities.User.Create(
                 "testuser",
                 "test@example.com",
                 "Test",
                 "User",
-                UserRole.User
+                role.Id
             );
 
             context.Users.Add(user);

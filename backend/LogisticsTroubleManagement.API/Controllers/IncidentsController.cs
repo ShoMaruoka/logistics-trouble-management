@@ -4,13 +4,15 @@ using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.Repositories;
 using LogisticsTroubleManagement.Domain.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 
 namespace LogisticsTroubleManagement.API.Controllers;
 
+[Authorize] // 全エンドポイントに認証必須
 [ApiController]
 [Route("api/[controller]")]
-public class IncidentsController : ControllerBase
+public class IncidentsController : BaseController
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IIncidentRepository _incidentRepository;
@@ -545,8 +547,14 @@ public class IncidentsController : ControllerBase
             : null;
 
         // マスタ情報の取得
+        _logger.LogInformation("インシデントマスタデータ取得: TroubleTypeId={TroubleTypeId}, DamageTypeId={DamageTypeId}, WarehouseId={WarehouseId}, ShippingCompanyId={ShippingCompanyId}", 
+            incident.TroubleTypeId, incident.DamageTypeId, incident.WarehouseId, incident.ShippingCompanyId);
+        
         var (troubleType, damageType, warehouse, shippingCompany) = await _masterDataResolver.GetIncidentMasterDataAsync(
             incident.TroubleTypeId, incident.DamageTypeId, incident.WarehouseId, incident.ShippingCompanyId);
+        
+        _logger.LogInformation("マスタデータ取得結果: TroubleType={TroubleType}, DamageType={DamageType}, Warehouse={Warehouse}, ShippingCompany={ShippingCompany}", 
+            troubleType?.Name, damageType?.Name, warehouse?.Name, shippingCompany?.Name);
 
         return new IncidentDto
         {
@@ -606,6 +614,51 @@ public class IncidentsController : ControllerBase
     /// バッチ処理版のDTO変換（N+1問題を解決）
     /// </summary>
     private async Task<IEnumerable<IncidentDto>> ConvertToDtoBatchAsync(IEnumerable<Incident> incidents)
+    {
+        if (!incidents.Any())
+        {
+            return Enumerable.Empty<IncidentDto>();
+        }
+
+        try
+        {
+            // 個別取得と同じロジックを使用（バッチ処理の問題を回避）
+            var dtos = new List<IncidentDto>();
+
+            foreach (var incident in incidents)
+            {
+                var dto = await ConvertToDtoAsync(incident);
+                dtos.Add(dto);
+            }
+
+            return dtos;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "バッチDTO変換中にエラーが発生しました。個別変換にフォールバックします。");
+            
+            // フォールバック：個別変換
+            var dtos = new List<IncidentDto>();
+            foreach (var incident in incidents)
+            {
+                try
+                {
+                    var dto = await ConvertToDtoAsync(incident);
+                    dtos.Add(dto);
+                }
+                catch (Exception innerEx)
+                {
+                    _logger.LogError(innerEx, "インシデント {Id} のDTO変換中にエラーが発生しました", incident.Id);
+                }
+            }
+            return dtos;
+        }
+    }
+
+    /// <summary>
+    /// バッチ処理版のDTO変換（N+1問題を解決）- 旧実装（問題あり）
+    /// </summary>
+    private async Task<IEnumerable<IncidentDto>> ConvertToDtoBatchAsync_Old(IEnumerable<Incident> incidents)
     {
         if (!incidents.Any())
         {

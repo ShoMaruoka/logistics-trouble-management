@@ -1,6 +1,7 @@
 using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.ValueObjects;
+using LogisticsTroubleManagement.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,11 +11,13 @@ public class DatabaseSeeder
 {
 	private readonly ApplicationDbContext _context;
 	private readonly ILogger<DatabaseSeeder> _logger;
+	private readonly IPasswordService _passwordService;
 
-	public DatabaseSeeder(ApplicationDbContext context, ILogger<DatabaseSeeder> logger)
+	public DatabaseSeeder(ApplicationDbContext context, ILogger<DatabaseSeeder> logger, IPasswordService passwordService)
 	{
 		_context = context;
 		_logger = logger;
+		_passwordService = passwordService;
 	}
 
 	public async Task SeedAsync()
@@ -22,6 +25,10 @@ public class DatabaseSeeder
 		try
 		{
 			_logger.LogInformation("サンプルデータの投入を開始します...");
+
+			// マスタデータの投入（インシデントデータより先に）
+			await SeedMasterDataAsync();
+			await _context.SaveChangesAsync();
 
 			// ユーザーデータの投入
 			await SeedUsersAsync();
@@ -60,14 +67,27 @@ public class DatabaseSeeder
 			return;
 		}
 
+		// ロールの作成（先に作成）
+		var roles = new List<Role>
+		{
+			Role.Create("Admin", "システム管理者"),
+			Role.Create("Incident Manager", "インシデント管理者"),
+			Role.Create("Warehouse Staff", "倉庫スタッフ"),
+			Role.Create("Clerk", "一般職員")
+		};
+
+		await _context.Roles.AddRangeAsync(roles);
+		await _context.SaveChangesAsync();
+
+		// ユーザーの作成（ロールIDを指定）
 		var users = new List<User>
 		{
-			User.Create("admin", "admin@example.com", "管理者", "太郎", UserRole.Admin),
-			User.Create("manager1", "manager1@example.com", "マネージャー", "花子", UserRole.Manager),
-			User.Create("manager2", "manager2@example.com", "マネージャー", "次郎", UserRole.Manager),
-			User.Create("user1", "user1@example.com", "一般", "三郎", UserRole.User),
-			User.Create("user2", "user2@example.com", "一般", "四郎", UserRole.User),
-			User.Create("user3", "user3@example.com", "一般", "五郎", UserRole.User)
+			User.Create("admin", "admin@example.com", "管理者", "太郎", roles[0].Id), // Admin
+			User.Create("manager1", "manager1@example.com", "マネージャー", "花子", roles[1].Id), // Incident Manager
+			User.Create("manager2", "manager2@example.com", "マネージャー", "次郎", roles[1].Id), // Incident Manager
+			User.Create("user1", "user1@example.com", "一般", "三郎", roles[3].Id), // Clerk
+			User.Create("user2", "user2@example.com", "一般", "四郎", roles[3].Id), // Clerk
+			User.Create("user3", "user3@example.com", "一般", "五郎", roles[3].Id) // Clerk
 		};
 
 		// 電話番号を設定
@@ -75,8 +95,17 @@ public class DatabaseSeeder
 		users[1].UpdateProfile("マネージャー", "花子", "03-2345-6789");
 		users[2].UpdateProfile("マネージャー", "次郎", "090-1234-5678");
 
+		// パスワードハッシュを設定
+		foreach (var user in users)
+		{
+			var hashedPassword = _passwordService.HashPassword("password123");
+			user.SetPasswordHash(hashedPassword);
+		}
+
 		await _context.Users.AddRangeAsync(users);
-		_logger.LogInformation("{Count}件のユーザーデータを追加しました。", users.Count);
+		await _context.SaveChangesAsync();
+
+		_logger.LogInformation("{Count}件のユーザーデータとロールデータを追加しました。", users.Count);
 	}
 
 	private async Task SeedIncidentsAsync()
@@ -88,9 +117,14 @@ public class DatabaseSeeder
 		}
 
 		var users = await _context.Users.ToListAsync();
-		if (!users.Any())
+		var troubleTypes = await _context.TroubleTypes.ToListAsync();
+		var damageTypes = await _context.DamageTypes.ToListAsync();
+		var warehouses = await _context.Warehouses.ToListAsync();
+		var shippingCompanies = await _context.ShippingCompanies.ToListAsync();
+
+		if (!users.Any() || !troubleTypes.Any() || !damageTypes.Any() || !warehouses.Any() || !shippingCompanies.Any())
 		{
-			_logger.LogWarning("ユーザーデータが存在しないため、インシデントデータの投入をスキップします。");
+			_logger.LogWarning("必要なマスタデータが存在しないため、インシデントデータの投入をスキップします。");
 			return;
 		}
 
@@ -101,10 +135,10 @@ public class DatabaseSeeder
 				"配送車両A-001がエンジンオイル漏れのため、緊急点検が必要です。",
 				"車両故障",
 				users[3].Id, // user1
-				(int)Domain.Enums.TroubleType.DeliveryTrouble,
-				(int)Domain.Enums.DamageType.OtherDeliveryMistake,
-				(int)Domain.Enums.Warehouse.WarehouseA,
-				(int)Domain.Enums.ShippingCompany.ATransport,
+				troubleTypes[0].Id, // 破損
+				damageTypes[0].Id, // 物理的破損
+				warehouses[0].Id, // 東京倉庫
+				shippingCompanies[0].Id, // ヤマト運輸
 				new DateTime(2025, 8, 15), // 発生日
 				Priority.High
 			),
@@ -113,10 +147,10 @@ public class DatabaseSeeder
 				"冷蔵倉庫の温度が設定値より2度高い状態が続いています。",
 				"設備故障",
 				users[4].Id, // user2
-				(int)Domain.Enums.TroubleType.ProductTrouble,
-				(int)Domain.Enums.DamageType.OtherProductAccident,
-				(int)Domain.Enums.Warehouse.WarehouseB,
-				(int)Domain.Enums.ShippingCompany.InHouse,
+				troubleTypes[1].Id, // 遅延
+				damageTypes[2].Id, // 温度による損傷
+				warehouses[1].Id, // 大阪倉庫
+				shippingCompanies[1].Id, // 佐川急便
 				new DateTime(2025, 8, 16), // 発生日
 				Priority.Critical
 			),
@@ -125,10 +159,10 @@ public class DatabaseSeeder
 				"関東地区の配送が台風の影響で1日遅延する見込みです。",
 				"配送遅延",
 				users[5].Id, // user3
-				(int)Domain.Enums.TroubleType.DeliveryTrouble,
-				(int)Domain.Enums.DamageType.EarlyOrLateArrival,
-				(int)Domain.Enums.Warehouse.WarehouseB,
-				(int)Domain.Enums.ShippingCompany.Charter,
+				troubleTypes[1].Id, // 遅延
+				damageTypes[0].Id, // 物理的破損
+				warehouses[1].Id, // 大阪倉庫
+				shippingCompanies[2].Id, // 日本通運
 				new DateTime(2025, 8, 17), // 発生日
 				Priority.Medium
 			),
@@ -137,10 +171,10 @@ public class DatabaseSeeder
 				"精密機器の荷物が輸送中に破損しました。",
 				"荷物破損",
 				users[3].Id, // user1
-				(int)Domain.Enums.TroubleType.ProductTrouble,
-				(int)Domain.Enums.DamageType.DamageOrContamination,
-				(int)Domain.Enums.Warehouse.WarehouseA,
-				(int)Domain.Enums.ShippingCompany.BExpress,
+				troubleTypes[0].Id, // 破損
+				damageTypes[0].Id, // 物理的破損
+				warehouses[0].Id, // 東京倉庫
+				shippingCompanies[3].Id, // 福山通運
 				new DateTime(2025, 8, 18), // 発生日
 				Priority.High
 			),
@@ -149,10 +183,10 @@ public class DatabaseSeeder
 				"複数のユーザーからログインできないとの報告があります。",
 				"システム障害",
 				users[4].Id, // user2
-				(int)Domain.Enums.TroubleType.ProductTrouble,
-				(int)Domain.Enums.DamageType.OtherProductAccident,
-				(int)Domain.Enums.Warehouse.WarehouseC,
-				(int)Domain.Enums.ShippingCompany.ATransport,
+				troubleTypes[4].Id, // 品質不良
+				damageTypes[3].Id, // 汚損
+				warehouses[2].Id, // 名古屋倉庫
+				shippingCompanies[0].Id, // ヤマト運輸
 				new DateTime(2025, 8, 19), // 発生日
 				Priority.Critical
 			)
@@ -322,5 +356,70 @@ public class DatabaseSeeder
 
 		await _context.Effectiveness.AddRangeAsync(effectiveness);
 		_logger.LogInformation("{Count}件の効果測定データを追加しました。", effectiveness.Count);
+	}
+
+	private async Task SeedMasterDataAsync()
+	{
+		// TroubleTypesの投入
+		if (!await _context.TroubleTypes.AnyAsync())
+		{
+			var troubleTypes = new List<LogisticsTroubleManagement.Domain.Entities.TroubleType>
+			{
+				new LogisticsTroubleManagement.Domain.Entities.TroubleType("破損", "商品の破損に関するトラブル", "#FF6B6B"),
+				new LogisticsTroubleManagement.Domain.Entities.TroubleType("遅延", "配送遅延に関するトラブル", "#4ECDC4"),
+				new LogisticsTroubleManagement.Domain.Entities.TroubleType("紛失", "商品紛失に関するトラブル", "#45B7D1"),
+				new LogisticsTroubleManagement.Domain.Entities.TroubleType("誤配送", "配送先間違いに関するトラブル", "#96CEB4"),
+				new LogisticsTroubleManagement.Domain.Entities.TroubleType("品質不良", "商品品質に関するトラブル", "#FFEAA7")
+			};
+
+			await _context.TroubleTypes.AddRangeAsync(troubleTypes);
+			_logger.LogInformation("{Count}件のトラブルタイプデータを追加しました。", troubleTypes.Count);
+		}
+
+		// DamageTypesの投入
+		if (!await _context.DamageTypes.AnyAsync())
+		{
+			var damageTypes = new List<LogisticsTroubleManagement.Domain.Entities.DamageType>
+			{
+				new LogisticsTroubleManagement.Domain.Entities.DamageType("物理的破損", "PHYSICAL", "外箱の破損、商品の変形など"),
+				new LogisticsTroubleManagement.Domain.Entities.DamageType("湿気による損傷", "MOISTURE", "雨漏り、湿気による品質劣化"),
+				new LogisticsTroubleManagement.Domain.Entities.DamageType("温度による損傷", "TEMPERATURE", "高温・低温による品質劣化"),
+				new LogisticsTroubleManagement.Domain.Entities.DamageType("汚損", "CONTAMINATION", "汚れ、異物混入など"),
+				new LogisticsTroubleManagement.Domain.Entities.DamageType("盗難", "THEFT", "商品の盗難・紛失")
+			};
+
+			await _context.DamageTypes.AddRangeAsync(damageTypes);
+			_logger.LogInformation("{Count}件の損傷タイプデータを追加しました。", damageTypes.Count);
+		}
+
+		// Warehousesの投入
+		if (!await _context.Warehouses.AnyAsync())
+		{
+			var warehouses = new List<LogisticsTroubleManagement.Domain.Entities.Warehouse>
+			{
+				new LogisticsTroubleManagement.Domain.Entities.Warehouse("東京倉庫", "東京都江東区", "03-1234-5678", "tokyo@example.com"),
+				new LogisticsTroubleManagement.Domain.Entities.Warehouse("大阪倉庫", "大阪府大阪市", "06-2345-6789", "osaka@example.com"),
+				new LogisticsTroubleManagement.Domain.Entities.Warehouse("名古屋倉庫", "愛知県名古屋市", "052-3456-7890", "nagoya@example.com"),
+				new LogisticsTroubleManagement.Domain.Entities.Warehouse("福岡倉庫", "福岡県福岡市", "092-4567-8901", "fukuoka@example.com")
+			};
+
+			await _context.Warehouses.AddRangeAsync(warehouses);
+			_logger.LogInformation("{Count}件の倉庫データを追加しました。", warehouses.Count);
+		}
+
+		// ShippingCompaniesの投入
+		if (!await _context.ShippingCompanies.AnyAsync())
+		{
+			var shippingCompanies = new List<LogisticsTroubleManagement.Domain.Entities.ShippingCompany>
+			{
+				new LogisticsTroubleManagement.Domain.Entities.ShippingCompany("ヤマト運輸", "YAMATO", "03-1111-2222", "yamato@example.com"),
+				new LogisticsTroubleManagement.Domain.Entities.ShippingCompany("佐川急便", "SAGAWA", "03-3333-4444", "sagawa@example.com"),
+				new LogisticsTroubleManagement.Domain.Entities.ShippingCompany("日本通運", "NITTSU", "03-5555-6666", "nittsu@example.com"),
+				new LogisticsTroubleManagement.Domain.Entities.ShippingCompany("福山通運", "FUKUYAMA", "03-7777-8888", "fukuyama@example.com")
+			};
+
+			await _context.ShippingCompanies.AddRangeAsync(shippingCompanies);
+			_logger.LogInformation("{Count}件の配送会社データを追加しました。", shippingCompanies.Count);
+		}
 	}
 }

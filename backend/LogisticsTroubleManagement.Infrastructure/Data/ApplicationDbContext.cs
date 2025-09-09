@@ -15,6 +15,10 @@ public class ApplicationDbContext : DbContext
 	public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 	public DbSet<Effectiveness> Effectiveness => Set<Effectiveness>();
 	
+	// 認証関連のDbSet
+	public DbSet<Role> Roles => Set<Role>();
+	public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+	
 	// マスタデータのDbSet
 	public DbSet<TroubleType> TroubleTypes => Set<TroubleType>();
 	public DbSet<DamageType> DamageTypes => Set<DamageType>();

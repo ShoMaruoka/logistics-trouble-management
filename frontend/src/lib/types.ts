@@ -126,7 +126,7 @@ export interface Incident {
   effectivenessComment: string; // 有効性確認コメント
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   status: 'Open' | 'InProgress' | 'Resolved' | 'Closed';
-  occurrenceDate: string;
+  occurrenceDate?: string | null;
   incidentDetails?: string;
   totalShipments?: number;
   defectiveItems?: number;
@@ -136,7 +136,7 @@ export interface Incident {
   preventionMeasures?: string;
   reportedDate: string;
   assignedDate?: string;
-  resolvedDate?: string;
+  resolvedDate?: string | null;
   closedDate?: string;
   resolution?: string;
   resolutionTime?: string;

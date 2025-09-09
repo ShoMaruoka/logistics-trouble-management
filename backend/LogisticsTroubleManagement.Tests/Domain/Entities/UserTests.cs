@@ -15,10 +15,10 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
             var email = "test@example.com";
             var firstName = "Test";
             var lastName = "User";
-            var role = UserRole.User;
+            var roleId = 1; // Clerk role ID
 
             // Act
-            var user = User.Create(username, email, firstName, lastName, role);
+            var user = User.Create(username, email, firstName, lastName, roleId);
 
             // Assert
             Assert.NotNull(user);
@@ -26,7 +26,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
             Assert.Equal(email, user.Email.Value);
             Assert.Equal(firstName, user.FirstName);
             Assert.Equal(lastName, user.LastName);
-            Assert.Equal(role, user.Role);
+            Assert.Equal(roleId, user.RoleId);
             Assert.True(user.IsActive);
             Assert.NotEqual(default(DateTime), user.CreatedAt);
             Assert.NotEqual(default(DateTime), user.UpdatedAt);
@@ -66,17 +66,18 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         }
 
         [Fact]
-        public void UpdateRole_WithValidRole_ShouldUpdateRole()
+        public void UpdateRole_WithValidRoleId_ShouldUpdateRole()
         {
             // Arrange
             var user = CreateTestUser();
-            var newRole = UserRole.Manager;
+            var newRoleId = 2; // Manager role ID
 
             // Act
-            user.UpdateRole(newRole);
+            user.UpdateRole(newRoleId);
 
             // Assert
-            Assert.Equal(newRole, user.Role);
+            Assert.Equal(newRoleId, user.RoleId);
+            Assert.True(user.HasRole(newRoleId));
         }
 
         [Fact]
@@ -120,36 +121,37 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         }
 
         [Fact]
-        public void HasPermission_WithLowerRole_ShouldReturnTrue()
+        public void HasRole_WithValidRoleId_ShouldReturnTrue()
         {
             // Arrange
-            var user = CreateTestUser(UserRole.Manager);
+            var user = CreateTestUser();
+            user.UpdateRole(2); // Manager role ID
 
             // Act
-            var hasPermission = user.HasPermission(UserRole.User);
+            var hasRole = user.HasRole(2);
 
             // Assert
-            Assert.True(hasPermission);
+            Assert.True(hasRole);
         }
 
         [Fact]
-        public void HasPermission_WithHigherRole_ShouldReturnFalse()
+        public void HasRole_WithInvalidRoleId_ShouldReturnFalse()
         {
             // Arrange
-            var user = CreateTestUser(UserRole.User);
+            var user = CreateTestUser();
 
             // Act
-            var hasPermission = user.HasPermission(UserRole.Manager);
+            var hasRole = user.HasRole(999); // Non-existent role ID
 
             // Assert
-            Assert.False(hasPermission);
+            Assert.False(hasRole);
         }
 
         [Fact]
         public void CanManageIncidents_WithManagerRole_ShouldReturnTrue()
         {
             // Arrange
-            var user = CreateTestUser(UserRole.Manager);
+            var user = CreateTestUserWithRole("Incident Manager");
 
             // Act
             var canManage = user.CanManageIncidents();
@@ -162,7 +164,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         public void CanManageIncidents_WithUserRole_ShouldReturnFalse()
         {
             // Arrange
-            var user = CreateTestUser(UserRole.User);
+            var user = CreateTestUserWithRole("Clerk");
 
             // Act
             var canManage = user.CanManageIncidents();
@@ -175,7 +177,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         public void CanManageUsers_WithAdminRole_ShouldReturnTrue()
         {
             // Arrange
-            var user = CreateTestUser(UserRole.Admin);
+            var user = CreateTestUserWithRole("Admin");
 
             // Act
             var canManage = user.CanManageUsers();
@@ -188,7 +190,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
         public void CanManageUsers_WithManagerRole_ShouldReturnFalse()
         {
             // Arrange
-            var user = CreateTestUser(UserRole.Manager);
+            var user = CreateTestUserWithRole("Incident Manager");
 
             // Act
             var canManage = user.CanManageUsers();
@@ -197,15 +199,41 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
             Assert.False(canManage);
         }
 
-        private static User CreateTestUser(UserRole role = UserRole.User)
+        private static User CreateTestUser()
         {
             return User.Create(
                 "testuser",
                 "test@example.com",
                 "Test",
                 "User",
-                role
+                1 // Default role ID (Clerk)
             );
+        }
+
+        private static User CreateTestUserWithRole(string roleName)
+        {
+            var roleId = roleName switch
+            {
+                "Admin" => 4,
+                "Incident Manager" => 2,
+                "Warehouse Staff" => 3,
+                "Clerk" => 1,
+                _ => 1
+            };
+
+            var user = User.Create(
+                "testuser",
+                "test@example.com",
+                "Test",
+                "User",
+                roleId
+            );
+
+            // Roleナビゲーションプロパティを設定（テスト用）
+            var role = new Role(roleName, $"Test {roleName}");
+            user.SetRole(role);
+
+            return user;
         }
     }
 }

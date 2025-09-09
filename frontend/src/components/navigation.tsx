@@ -4,6 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRolePermissions } from "@/components/RoleBasedAccess";
+import { Button } from "@/components/ui/button";
 import { 
   Home, 
   AlertTriangle, 
@@ -11,21 +14,46 @@ import {
   FileText, 
   TrendingUp,
   Settings,
-  Database
+  Database,
+  LogOut,
+  User,
+  Users,
+  Shield
 } from "lucide-react";
 
-const navigation = [
-  { name: 'ダッシュボード', href: '/', icon: Home },
-  { name: 'トラブル管理', href: '/incidents', icon: AlertTriangle },
-  { name: '統計・分析', href: '/statistics', icon: BarChart3 },
-  { name: 'ファイル管理', href: '/attachments', icon: FileText },
-  { name: '効果測定', href: '/effectiveness', icon: TrendingUp },
-  { name: 'マスタ管理', href: '/master', icon: Database },
-  { name: '設定', href: '/settings', icon: Settings },
+// ナビゲーション項目の定義（権限チェック付き）
+const getNavigationItems = (permissions: ReturnType<typeof useRolePermissions>) => [
+  { name: 'ダッシュボード', href: '/', icon: Home, show: true },
+  { name: 'トラブル管理', href: '/incidents', icon: AlertTriangle, show: permissions.canViewIncidents },
+  { name: '統計・分析', href: '/statistics', icon: BarChart3, show: permissions.canViewStatistics },
+  { name: 'ファイル管理', href: '/attachments', icon: FileText, show: permissions.canViewIncidents },
+  { name: '効果測定', href: '/effectiveness', icon: TrendingUp, show: permissions.canManageEffectiveness },
+  { name: 'マスタ管理', href: '/master', icon: Database, show: permissions.canManageMasters },
+  { name: 'ユーザー管理', href: '/users', icon: Users, show: permissions.canManageUsers },
+  { name: 'ロール管理', href: '/roles', icon: Shield, show: permissions.canManageUsers },
+  { name: '設定', href: '/settings', icon: Settings, show: permissions.canManageMasters },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
+  const { user, isAuthenticated, logout } = useAuth();
+  const permissions = useRolePermissions();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+    }
+  };
+
+  // 認証されていない場合はナビゲーションを表示しない
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // 権限に基づいてナビゲーション項目をフィルタリング
+  const navigationItems = getNavigationItems(permissions).filter(item => item.show);
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -43,7 +71,7 @@ export function Navigation() {
 
           {/* ナビゲーションリンク */}
           <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => {
+            {navigationItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -61,6 +89,26 @@ export function Navigation() {
                 </Link>
               );
             })}
+          </div>
+
+          {/* ユーザー情報とログアウトボタン */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user && (
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User className="h-4 w-4" />
+                <span>{user.username}</span>
+                <span className="text-gray-400">({user.roleName})</span>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>ログアウト</span>
+            </Button>
           </div>
 
           {/* モバイルメニューボタン */}

@@ -14,6 +14,9 @@ using LogisticsTroubleManagement.Core.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
+using Microsoft.AspNetCore.CookiePolicy;
+using LogisticsTroubleManagement.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +35,7 @@ builder.Services.AddControllers(options =>
 .AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     options.JsonSerializerOptions.WriteIndented = true;
     options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
     options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
@@ -89,6 +93,10 @@ builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IEffectivenessRepository, EffectivenessRepository>();
 
+// 認証関連のリポジトリ
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
 // Add Master Data Repositories
 builder.Services.AddScoped<ITroubleTypeRepository, TroubleTypeRepository>();
 builder.Services.AddScoped<IDamageTypeRepository, DamageTypeRepository>();
@@ -97,6 +105,21 @@ builder.Services.AddScoped<IShippingCompanyRepository, ShippingCompanyRepository
 
 // Add Domain Services
 builder.Services.AddScoped<IncidentDomainService>();
+
+// Add Authentication Services
+builder.Services.AddScoped<IAuthenticationService, LogisticsTroubleManagement.Infrastructure.Services.SimpleAuthenticationService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<IJwtService, LogisticsTroubleManagement.Infrastructure.Services.JwtService>();
+builder.Services.AddScoped<IPasswordService, LogisticsTroubleManagement.Infrastructure.Services.PasswordService>();
+
+// Add User Management Services
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+
+// Add Role Management Services
+builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
+
+// Add Password Management Services
+builder.Services.AddScoped<IPasswordManagementService, PasswordManagementService>();
 
 // Add Master Data Resolver Service
 builder.Services.AddScoped<IMasterDataResolverService, MasterDataResolverService>();
@@ -116,11 +139,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:3002")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // クッキーを許可
     });
 });
+
+// 認証設定の読み込み
+builder.Services.Configure<LogisticsTroubleManagement.Core.Configuration.AuthenticationSettings>(
+    builder.Configuration.GetSection("Authentication"));
 
 // 認証・認可サービスの設定
 var requireAuth = builder.Configuration.GetValue<bool>("Authentication:RequireAuth", false);
@@ -129,7 +157,12 @@ if (requireAuth)
 {
     // JWT認証の設定
     var jwtSettings = builder.Configuration.GetSection("Authentication:Jwt");
-    var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "your-secret-key-here");
+    var key = jwtSettings["Key"];
+    
+    if (string.IsNullOrEmpty(key))
+    {
+        throw new InvalidOperationException("JWT signing key must be configured via environment variable or Secret Manager");
+    }
     
     builder.Services.AddAuthentication(options =>
     {
@@ -138,22 +171,84 @@ if (requireAuth)
     })
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
+            // 基本検証設定
             ValidateIssuer = true,
-            ValidIssuer = jwtSettings["Issuer"],
             ValidateAudience = true,
-            ValidAudience = jwtSettings["Audience"],
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ValidateIssuerSigningKey = true,
+            
+            // 発行者・対象者・署名キー設定
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            
+            // 重要な追加設定（必須）
+            ClockSkew = TimeSpan.Zero, // 厳密な時刻検証
+            RoleClaimType = ClaimTypes.Role, // ロールクレーム名
+            NameClaimType = ClaimTypes.Name, // ユーザー名クレーム名
+            ValidateTokenReplay = true, // トークン再利用攻撃防止
+            
+            // オプション設定
+            RequireExpirationTime = true, // 有効期限必須
+            RequireSignedTokens = true // 署名必須
         };
+        
+        // クッキーからのJWTトークン抽出（クッキーベース認証用）
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // クッキーからJWTトークンを抽出
+                if (context.Request.Cookies.ContainsKey("access_token"))
+                {
+                    context.Token = context.Request.Cookies["access_token"];
+                }
+                
+                // ヘッダーからの抽出も併用（フォールバック）
+                if (string.IsNullOrEmpty(context.Token))
+                {
+                    var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                    {
+                        context.Token = authHeader.Substring("Bearer ".Length);
+                    }
+                }
+                
+                return Task.CompletedTask;
+            }
+        };
+        
+        // セキュリティ強化設定
+        options.RequireHttpsMetadata = true;
+        options.SaveToken = false;
     });
     
-    builder.Services.AddAuthorization();
+    // 認可ポリシーの設定
+    builder.Services.AddAuthorization(options => {
+        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+        options.AddPolicy("ManagerOnly", policy => policy.RequireRole("IncidentManager"));
+        options.AddPolicy("WarehouseStaff", policy => policy.RequireRole("WarehouseStaff"));
+        options.AddPolicy("ClerkOrAbove", policy => policy.RequireRole("Clerk", "IncidentManager", "WarehouseStaff", "Admin"));
+    });
+    
+    // セッション・クッキー設定
+    builder.Services.Configure<CookiePolicyOptions>(options =>
+    {
+        options.MinimumSameSitePolicy = SameSiteMode.Strict;
+        options.HttpOnly = HttpOnlyPolicy.Always;
+        options.Secure = CookieSecurePolicy.Always;
+    });
+    
+    // CSRF保護の設定
+    builder.Services.AddAntiforgery(options =>
+    {
+        options.HeaderName = "X-CSRF-TOKEN";
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+    });
 }
 
 var app = builder.Build();
@@ -172,19 +267,20 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // 一時的に無効化
 
 app.UseCors("AllowAll");
 
 // 条件付き認証・認可の適用
 if (requireAuth)
 {
+    app.UseCookiePolicy();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseAntiforgery();
     
-    // APIエンドポイントグループに認証を適用
-    app.MapControllers()
-        .RequireAuthorization();
+    // 認証が必要なコントローラーのみに認証を適用
+    app.MapControllers();
 }
 else
 {

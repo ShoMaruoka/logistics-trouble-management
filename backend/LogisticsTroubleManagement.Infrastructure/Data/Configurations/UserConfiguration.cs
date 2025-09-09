@@ -35,8 +35,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 			.IsRequired()
 			.HasMaxLength(50);
 
-		builder.Property(u => u.Role)
-			.IsRequired();
+
 
 		builder.Property(u => u.IsActive)
 			.IsRequired()
@@ -56,7 +55,27 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 			.HasDefaultValueSql("GETUTCDATE()")
 			.IsRequired();
 		builder.Property(u => u.UpdatedAt)
-			.IsRequired(false);
+			.HasDefaultValueSql("GETUTCDATE()")
+			.IsRequired();
+
+		// 認証関連プロパティ
+		builder.Property(u => u.PasswordHash)
+			.IsRequired()
+			.HasMaxLength(255);
+
+		builder.Property(u => u.LastLoginAt);
+
+		builder.Property(u => u.TokenVersion)
+			.IsRequired()
+			.HasDefaultValue(1);
+
+		builder.Property(u => u.RoleId)
+			.IsRequired();
+
+		builder.HasOne(u => u.Role)
+			.WithMany(r => r.Users)
+			.HasForeignKey(u => u.RoleId)
+			.OnDelete(DeleteBehavior.Restrict);
 
 		builder.HasMany(u => u.ReportedIncidents)
 			.WithOne(i => i.ReportedBy)
@@ -82,5 +101,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 			.WithOne(e => e.MeasuredBy)
 			.HasForeignKey(e => e.MeasuredById)
 			.OnDelete(DeleteBehavior.NoAction);
+
+		builder.HasMany(u => u.RefreshTokens)
+			.WithOne(rt => rt.User)
+			.HasForeignKey(rt => rt.UserId)
+			.OnDelete(DeleteBehavior.Cascade);
+
+
 	}
 }
