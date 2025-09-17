@@ -24,11 +24,13 @@ import {
   useUpdateIncident, 
   useDeleteIncident
 } from "@/lib/hooks";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
+  const { user } = useAuth();
 
   const { createIncident, loading: createLoading } = useCreateIncident();
   const { updateIncident, loading: updateLoading } = useUpdateIncident();
@@ -136,16 +138,19 @@ export default function Home() {
             <Logo className="h-8 w-8" />
             <h1 className="text-3xl font-bold text-gray-900">物流トラブル管理</h1>
           </div>
-          <Button
-            onClick={() => {
-              setEditingIncident(null);
-              setIsDialogOpen(true);
-            }}
-            className="flex items-center gap-2 bg-logistics-blue hover:bg-logistics-blue/90 text-white"
-          >
-            <PlusCircle className="h-5 w-5" />
-            物流トラブル登録
-          </Button>
+          {/* 倉庫担当ユーザーには物流トラブル登録ボタンを表示しない */}
+          {user?.roleName !== 'Warehouse Staff' && (
+            <Button
+              onClick={() => {
+                setEditingIncident(null);
+                setIsDialogOpen(true);
+              }}
+              className="flex items-center gap-2 bg-logistics-blue hover:bg-logistics-blue/90 text-white"
+            >
+              <PlusCircle className="h-5 w-5" />
+              物流トラブル登録
+            </Button>
+          )}
         </div>
 
         {/* ロール別ダッシュボード */}
