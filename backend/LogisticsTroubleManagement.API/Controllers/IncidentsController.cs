@@ -407,8 +407,7 @@ public class IncidentsController : BaseController
             }
 
             // 解決内容の更新
-            if (!string.IsNullOrWhiteSpace(updateDto.Resolution) && 
-                (updateDto.Status == IncidentStatus.Resolved || updateDto.Status == IncidentStatus.Closed))
+            if (!string.IsNullOrWhiteSpace(updateDto.Resolution))
             {
                 incident.Resolve(updateDto.Resolution);
             }

@@ -13,6 +13,8 @@ export interface User {
   roleId: number;
   lastLoginAt: string;
   isActive: boolean;
+  warehouseId?: number;
+  warehouseName?: string;
 }
 
 export interface LoginResponse {

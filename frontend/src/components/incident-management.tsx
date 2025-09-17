@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { IncidentList } from "@/components/incident-list";
 import type { Incident, IncidentSearchDto } from "@/lib/types";
 import { useIncidents } from "@/lib/hooks";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface IncidentManagementProps {
   onEdit: (incident: Incident) => void;
@@ -18,10 +19,14 @@ interface IncidentManagementProps {
 }
 
 export function IncidentManagement({ onEdit, onDelete }: IncidentManagementProps) {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: keyof Incident; direction: 'ascending' | 'descending' } | null>({ key: 'occurrenceDate', direction: 'descending' });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+
+  // 倉庫担当ユーザーの場合は担当倉庫のインシデントのみを表示
+  const isWarehouseStaff = user?.roleId === 3;
 
   // API Hooks
   const incidentSearchParams = useMemo<IncidentSearchDto>(() => ({
@@ -29,8 +34,10 @@ export function IncidentManagement({ onEdit, onDelete }: IncidentManagementProps
     page: currentPage,
     pageSize,
     sortBy: sortConfig?.key,
-    ascending: sortConfig?.direction === 'ascending'
-  }), [searchTerm, currentPage, pageSize, sortConfig?.key, sortConfig?.direction]);
+    ascending: sortConfig?.direction === 'ascending',
+    // 倉庫担当の場合は担当倉庫のインシデントのみを取得
+    warehouseId: isWarehouseStaff ? user?.warehouseId : undefined
+  }), [searchTerm, currentPage, pageSize, sortConfig?.key, sortConfig?.direction, isWarehouseStaff, user?.warehouseId]);
 
   const { data: incidentsData, loading: incidentsLoading, error: incidentsError, refetch: refetchIncidents } = useIncidents(incidentSearchParams);
 

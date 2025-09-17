@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LogisticsTroubleManagement.Core.Validation;
 
 namespace LogisticsTroubleManagement.Core.DTOs;
 
@@ -52,6 +53,12 @@ public class CreateUserDto
     [Required(ErrorMessage = "ロールを選択してください")]
     [Range(1, int.MaxValue, ErrorMessage = "有効なロールを選択してください")]
     public int RoleId { get; set; }
+
+    /// <summary>
+    /// 担当倉庫ID（倉庫担当ユーザーの場合必須）
+    /// </summary>
+    [WarehouseRequiredForRole(3, ErrorMessage = "倉庫担当ユーザーの場合は担当倉庫を選択してください。")]
+    public int? WarehouseId { get; set; }
 }
 
 /// <summary>
@@ -95,6 +102,12 @@ public class UpdateUserDto
     [Required(ErrorMessage = "ロールを選択してください")]
     [Range(1, int.MaxValue, ErrorMessage = "有効なロールを選択してください")]
     public int RoleId { get; set; }
+
+    /// <summary>
+    /// 担当倉庫ID（倉庫担当ユーザーの場合必須）
+    /// </summary>
+    [WarehouseRequiredForRole(3, ErrorMessage = "倉庫担当ユーザーの場合は担当倉庫を選択してください。")]
+    public int? WarehouseId { get; set; }
 
     /// <summary>
     /// 有効フラグ
@@ -166,6 +179,16 @@ public class UserDetailDto
     /// 更新日時
     /// </summary>
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// 担当倉庫ID
+    /// </summary>
+    public int? WarehouseId { get; set; }
+
+    /// <summary>
+    /// 担当倉庫名
+    /// </summary>
+    public string? WarehouseName { get; set; }
 }
 
 /// <summary>
@@ -207,6 +230,16 @@ public class UserListDto
     /// 最終ログイン日時
     /// </summary>
     public DateTime? LastLoginAt { get; set; }
+
+    /// <summary>
+    /// 担当倉庫ID
+    /// </summary>
+    public int? WarehouseId { get; set; }
+
+    /// <summary>
+    /// 担当倉庫名
+    /// </summary>
+    public string? WarehouseName { get; set; }
 }
 
 /// <summary>

@@ -72,10 +72,19 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(u => u.RoleId)
 			.IsRequired();
 
+		// 倉庫担当関連プロパティ
+		builder.Property(u => u.WarehouseId)
+			.IsRequired(false);
+
 		builder.HasOne(u => u.Role)
 			.WithMany(r => r.Users)
 			.HasForeignKey(u => u.RoleId)
 			.OnDelete(DeleteBehavior.Restrict);
+
+		builder.HasOne(u => u.Warehouse)
+			.WithMany()
+			.HasForeignKey(u => u.WarehouseId)
+			.OnDelete(DeleteBehavior.SetNull);
 
 		builder.HasMany(u => u.ReportedIncidents)
 			.WithOne(i => i.ReportedBy)

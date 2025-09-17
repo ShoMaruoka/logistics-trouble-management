@@ -3,6 +3,7 @@ using LogisticsTroubleManagement.Core.Services;
 using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Repositories;
 using LogisticsTroubleManagement.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LogisticsTroubleManagement.Infrastructure.Services;
@@ -87,6 +88,13 @@ public class UserManagementService : IUserManagementService
                 .Take(searchDto.PageSize)
                 .ToList();
 
+            // 倉庫情報を取得
+            var warehouseIds = pagedUsers.Where(u => u.WarehouseId.HasValue).Select(u => u.WarehouseId!.Value).Distinct().ToList();
+            var warehouses = warehouseIds.Any() 
+                ? await _context.Warehouses.Where(w => warehouseIds.Contains(w.Id)).ToListAsync()
+                : new List<Warehouse>();
+            var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
+
             var userListDtos = pagedUsers.Select(u => new UserListDto
             {
                 Id = u.Id,
@@ -95,7 +103,9 @@ public class UserManagementService : IUserManagementService
                 FullName = $"{u.FirstName} {u.LastName}",
                 RoleName = roleDict.GetValueOrDefault(u.RoleId, "Unknown"),
                 IsActive = u.IsActive,
-                LastLoginAt = u.LastLoginAt
+                LastLoginAt = u.LastLoginAt,
+                WarehouseId = u.WarehouseId,
+                WarehouseName = u.WarehouseId.HasValue ? warehouseDict.GetValueOrDefault(u.WarehouseId.Value) : null
             }).ToList();
 
             var result = new PagedResultDto<UserListDto>(userListDtos, totalCount, searchDto.Page, searchDto.PageSize);
@@ -123,6 +133,14 @@ public class UserManagementService : IUserManagementService
                 return null;
             }
 
+            // 倉庫情報を取得
+            string? warehouseName = null;
+            if (user.WarehouseId.HasValue)
+            {
+                var warehouse = await _context.Warehouses.FindAsync(user.WarehouseId.Value);
+                warehouseName = warehouse?.Name;
+            }
+
             var userDetailDto = new UserDetailDto
             {
                 Id = user.Id,
@@ -135,7 +153,9 @@ public class UserManagementService : IUserManagementService
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
+                UpdatedAt = user.UpdatedAt,
+                WarehouseId = user.WarehouseId,
+                WarehouseName = warehouseName
             };
 
             _logger.LogInformation("ユーザー詳細を取得しました。ユーザーID: {UserId}", userId);
@@ -172,6 +192,16 @@ public class UserManagementService : IUserManagementService
                 throw new InvalidOperationException($"ロールID {createDto.RoleId} が見つかりません。");
             }
 
+            // 倉庫担当ユーザーの場合、倉庫の存在チェック
+            if (createDto.RoleId == 3 && createDto.WarehouseId.HasValue) // 3 = 倉庫担当
+            {
+                var warehouse = await _context.Warehouses.FindAsync(createDto.WarehouseId.Value);
+                if (warehouse == null)
+                {
+                    throw new InvalidOperationException($"倉庫ID {createDto.WarehouseId.Value} が見つかりません。");
+                }
+            }
+
             // パスワードをハッシュ化
             var hashedPassword = _passwordService.HashPassword(createDto.Password);
 
@@ -186,10 +216,24 @@ public class UserManagementService : IUserManagementService
             // パスワードを設定
             user.SetPasswordHash(hashedPassword);
 
+            // 倉庫担当ユーザーの場合、倉庫を設定
+            if (createDto.RoleId == 3 && createDto.WarehouseId.HasValue)
+            {
+                user.SetWarehouse((int?)createDto.WarehouseId.Value);
+            }
+
             await _userRepository.AddAsync(user);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("ユーザーを作成しました。ユーザーID: {UserId}, ユーザー名: {Username}", user.Id, user.Username);
+
+            // 倉庫情報を取得
+            string? warehouseName = null;
+            if (user.WarehouseId.HasValue)
+            {
+                var warehouse = await _context.Warehouses.FindAsync(user.WarehouseId.Value);
+                warehouseName = warehouse?.Name;
+            }
 
             return new UserDetailDto
             {
@@ -203,7 +247,9 @@ public class UserManagementService : IUserManagementService
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
+                UpdatedAt = user.UpdatedAt,
+                WarehouseId = user.WarehouseId,
+                WarehouseName = warehouseName
             };
         }
         catch (Exception ex)
@@ -243,15 +289,44 @@ public class UserManagementService : IUserManagementService
                 throw new InvalidOperationException($"ロールID {updateDto.RoleId} が見つかりません。");
             }
 
+            // 倉庫担当ユーザーの場合、倉庫の存在チェック
+            if (updateDto.RoleId == 3 && updateDto.WarehouseId.HasValue) // 3 = 倉庫担当
+            {
+                var warehouse = await _context.Warehouses.FindAsync(updateDto.WarehouseId.Value);
+                if (warehouse == null)
+                {
+                    throw new InvalidOperationException($"倉庫ID {updateDto.WarehouseId.Value} が見つかりません。");
+                }
+            }
+
             // ユーザー情報を更新
             user.UpdateUserInfo(updateDto.Username, updateDto.Email, updateDto.FirstName, updateDto.LastName);
             user.UpdateRole(updateDto.RoleId);
             user.SetActiveStatus(updateDto.IsActive);
 
+            // 倉庫担当ユーザーの場合、倉庫を設定
+            if (updateDto.RoleId == 3 && updateDto.WarehouseId.HasValue)
+            {
+                user.SetWarehouse((int?)updateDto.WarehouseId.Value);
+            }
+            else if (updateDto.RoleId != 3)
+            {
+                // 倉庫担当以外の場合は倉庫をクリア
+                user.SetWarehouse((int?)null);
+            }
+
             await _userRepository.UpdateAsync(user);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("ユーザーを更新しました。ユーザーID: {UserId}", userId);
+
+            // 倉庫情報を取得
+            string? warehouseName = null;
+            if (user.WarehouseId.HasValue)
+            {
+                var warehouse = await _context.Warehouses.FindAsync(user.WarehouseId.Value);
+                warehouseName = warehouse?.Name;
+            }
 
             return new UserDetailDto
             {
@@ -265,7 +340,9 @@ public class UserManagementService : IUserManagementService
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt
+                UpdatedAt = user.UpdatedAt,
+                WarehouseId = user.WarehouseId,
+                WarehouseName = warehouseName
             };
         }
         catch (Exception ex)

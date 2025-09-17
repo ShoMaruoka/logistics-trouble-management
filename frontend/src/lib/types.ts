@@ -299,6 +299,8 @@ export interface UpdateIncidentDto {
   warehouseId?: number;
   shippingCompanyId?: number;
   effectivenessStatus?: 'NotImplemented' | 'Implemented';
+  effectivenessDate?: string | null;
+  effectivenessComment?: string;
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   status?: 'Open' | 'InProgress' | 'Resolved' | 'Closed';
   occurrenceDate?: string;

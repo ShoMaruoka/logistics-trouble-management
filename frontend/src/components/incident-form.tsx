@@ -97,6 +97,12 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
 
   React.useEffect(() => {
     if (incident) {
+      console.log('IncidentForm 日付データ確認:');
+      console.log('  incident.occurrenceDate:', incident.occurrenceDate);
+      console.log('  incident.effectivenessDate:', incident.effectivenessDate);
+      console.log('  occurrenceDate変換後:', incident.occurrenceDate ? incident.occurrenceDate.split('T')[0] : '');
+      console.log('  effectivenessDate変換後:', incident.effectivenessDate ? incident.effectivenessDate.split('T')[0] : '');
+      
       setFormData({
         title: incident.title || '',
         description: incident.description || '',
@@ -113,12 +119,12 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
         incidentDetails: incident.incidentDetails || '',
         totalShipments: incident.totalShipments || 0,
         defectiveItems: incident.defectiveItems || 0,
-        occurrenceDate: incident.occurrenceDate ? new Date(incident.occurrenceDate).toISOString().split('T')[0] : '',
+        occurrenceDate: incident.occurrenceDate ? incident.occurrenceDate.split('T')[0] : '',
         occurrenceLocation: incident.occurrenceLocation || '',
         summary: incident.summary || '',
         cause: incident.cause || '',
         preventionMeasures: incident.preventionMeasures || '',
-        effectivenessDate: incident.effectivenessDate ? new Date(incident.effectivenessDate).toISOString().split('T')[0] : '',
+        effectivenessDate: incident.effectivenessDate ? incident.effectivenessDate.split('T')[0] : '',
         effectivenessComment: incident.effectivenessComment || '',
         hasMasterDataError: false, // 編集時はエラーをリセット
       });
@@ -211,6 +217,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
   }, [masterDataLoading, troubleTypes, damageTypes, warehouses, shippingCompanies, incident]);
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log('IncidentForm handleSubmit called');
     e.preventDefault();
     
     // カテゴリを自動生成（トラブル種類 + 損傷種類）
@@ -268,12 +275,23 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
       setFormData(prev => ({ ...prev, hasMasterDataError: false }));
     }
     
-    onSubmit({
+    const submitData = {
       ...formData,
       category: autoCategory,
       occurrenceDate: formData.occurrenceDate,
       effectivenessDate: formData.effectivenessDate || null
-    });
+    };
+    
+    console.log('IncidentForm onSubmit called:', submitData);
+    console.log('IncidentForm onSubmit function:', onSubmit);
+    console.log('IncidentForm onSubmit function type:', typeof onSubmit);
+    
+    try {
+      onSubmit(submitData);
+      console.log('IncidentForm onSubmit completed successfully');
+    } catch (error) {
+      console.error('IncidentForm onSubmit error:', error);
+    }
   };
 
 
@@ -313,7 +331,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
   }
 
   return (
-         <form onSubmit={handleSubmit} className="space-y-4 bg-gray-100 p-4 rounded-lg w-full">
+         <form id="incident-form" onSubmit={handleSubmit} className="space-y-4 bg-gray-100 p-4 rounded-lg w-full">
       {/* マスタデータエラーメッセージ */}
       {formData.hasMasterDataError && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
@@ -502,7 +520,7 @@ export function IncidentForm({ incident, onSubmit, onCancel, loading = false, hi
             </div>
 
                          {/* 出荷元倉庫・運送会社名 */}
-             <div className="grid grid-cols-2 gap-4 mb-6">
+             <div className="space-y-4 mb-6">
               <div className="space-y-2">
                 <Label htmlFor="warehouse" className="text-sm font-medium text-gray-700">出荷元倉庫 *</Label>
                 <Select 

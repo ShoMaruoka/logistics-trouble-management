@@ -124,6 +124,9 @@ builder.Services.AddScoped<IPasswordManagementService, PasswordManagementService
 // Add Master Data Resolver Service
 builder.Services.AddScoped<IMasterDataResolverService, MasterDataResolverService>();
 
+// 倉庫担当専用サービス
+builder.Services.AddScoped<IWarehouseStaffService, LogisticsTroubleManagement.Infrastructure.Services.WarehouseStaffService>();
+
 // Add FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
 // Scan validators from Core assembly explicitly

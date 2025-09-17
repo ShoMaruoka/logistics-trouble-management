@@ -6,9 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 // ロール定義
 export enum UserRole {
   Admin = 1,
-  Clerk = 2,
-  IncidentManager = 3,
-  WarehouseStaff = 4,
+  IncidentManager = 2,
+  WarehouseStaff = 3,
+  Clerk = 4,
 }
 
 // ロール名のマッピング

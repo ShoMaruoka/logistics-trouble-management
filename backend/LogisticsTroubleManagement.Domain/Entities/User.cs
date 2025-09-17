@@ -18,6 +18,9 @@ public class User : BaseEntity
     public DateTime? LastPasswordChangeAt { get; private set; }
     public int TokenVersion { get; private set; } = 1;
     public int RoleId { get; private set; }
+    
+    // 倉庫担当関連プロパティ
+    public int? WarehouseId { get; private set; }
 
     // Navigation properties
     public virtual ICollection<Incident> ReportedIncidents { get; private set; } = new List<Incident>();
@@ -27,6 +30,7 @@ public class User : BaseEntity
     public virtual ICollection<Effectiveness> MeasuredEffectiveness { get; private set; } = new List<Effectiveness>();
     public virtual ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
     public virtual Role Role { get; private set; } = null!;
+    public virtual Warehouse? Warehouse { get; private set; }
 
     private User() { } // For EF Core
 
@@ -183,5 +187,29 @@ public class User : BaseEntity
     {
         IsActive = isActive;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    // 倉庫担当関連メソッド
+    public void SetWarehouse(int? warehouseId)
+    {
+        WarehouseId = warehouseId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetWarehouse(Warehouse? warehouse)
+    {
+        Warehouse = warehouse;
+        WarehouseId = warehouse?.Id;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public bool IsWarehouseStaff()
+    {
+        return HasRole("Warehouse Staff") || HasRole("倉庫担当");
+    }
+
+    public bool HasWarehouseAccess(int warehouseId)
+    {
+        return IsWarehouseStaff() && WarehouseId == warehouseId;
     }
 }

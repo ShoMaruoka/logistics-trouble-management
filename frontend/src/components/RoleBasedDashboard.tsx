@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardConfig, useRolePermissions } from './RoleBasedAccess';
 import { Dashboard } from './dashboard';
 import { IncidentManagement } from './incident-management';
+import { WarehouseStaffDashboard } from './WarehouseStaffDashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { IncidentForm } from '@/components/incident-form';
+import { useUpdateIncident } from '@/lib/hooks';
 import type { Incident, CreateIncidentDto, UpdateIncidentDto } from '@/lib/types';
 import { 
   User, 
@@ -41,6 +43,9 @@ export function RoleBasedDashboard() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingIncident, setEditingIncident] = React.useState<any>(null);
 
+  // API Hooks
+  const { updateIncident, loading: updateLoading } = useUpdateIncident();
+
   // インシデント編集のハンドラー
   const handleEditIncident = (incident: Incident) => {
     setEditingIncident(incident);
@@ -48,10 +53,18 @@ export function RoleBasedDashboard() {
   };
 
   const handleFormSubmit = async (data: CreateIncidentDto | UpdateIncidentDto) => {
-    // TODO: インシデント更新のAPI呼び出し
-    console.log('インシデントデータ:', data);
-    setIsDialogOpen(false);
-    setEditingIncident(null);
+    try {
+      if (editingIncident) {
+        console.log('RoleBasedDashboard updating incident:', editingIncident.id, data);
+        await updateIncident(editingIncident.id, data as UpdateIncidentDto);
+        console.log('RoleBasedDashboard update completed successfully');
+      }
+      setIsDialogOpen(false);
+      setEditingIncident(null);
+    } catch (error) {
+      console.error('RoleBasedDashboard update error:', error);
+      alert('更新に失敗しました');
+    }
   };
 
   if (!user) {
@@ -63,6 +76,11 @@ export function RoleBasedDashboard() {
         </div>
       </div>
     );
+  }
+
+  // 倉庫担当の場合は専用ダッシュボードを表示
+  if (user.roleId === 3) { // WarehouseStaff
+    return <WarehouseStaffDashboard />;
   }
 
   return (
@@ -222,7 +240,7 @@ export function RoleBasedDashboard() {
             setEditingIncident(null);
           }
         }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-none w-[40vw] max-h-[80vh] !max-w-[40vw] !w-[40vw] flex flex-col">
             <DialogHeader>
               <DialogTitle>
                 {editingIncident ? '物流トラブル編集' : '物流トラブル登録'}
@@ -231,10 +249,13 @@ export function RoleBasedDashboard() {
                 {editingIncident ? '物流トラブルの情報を編集してください。' : '新しい物流トラブルを登録してください。'}
               </DialogDescription>
             </DialogHeader>
-            <IncidentForm
-              incident={editingIncident}
-              onSubmit={handleFormSubmit}
-            />
+            <div className="flex-1 overflow-y-auto">
+              <IncidentForm
+                incident={editingIncident}
+                onSubmit={handleFormSubmit}
+                loading={updateLoading}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>

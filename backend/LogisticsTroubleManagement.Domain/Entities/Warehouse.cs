@@ -14,6 +14,7 @@ namespace LogisticsTroubleManagement.Domain.Entities
 
         // Navigation properties
         public virtual ICollection<Incident> Incidents { get; private set; } = new List<Incident>();
+        public virtual ICollection<User> Users { get; private set; } = new List<User>();
 
         private Warehouse() { }
 

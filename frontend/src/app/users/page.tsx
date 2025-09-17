@@ -27,6 +27,7 @@ import {
 export default function UsersPage() {
   const { user, getAccessToken } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -40,8 +41,46 @@ export default function UsersPage() {
     firstName: '',
     lastName: '',
     roleId: '',
-    password: ''
+    password: '',
+    warehouseId: ''
   });
+
+  // 倉庫一覧の取得
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const response = await fetch('http://localhost:5169/api/warehouses', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAccessToken() || ''}`,
+          },
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('取得した倉庫データ:', data);
+        
+        if (data && data.items && Array.isArray(data.items)) {
+          setWarehouses(data.items);
+        } else if (Array.isArray(data)) {
+          setWarehouses(data);
+        } else {
+          console.warn('倉庫APIレスポンスが期待される形式ではありません:', data);
+          setWarehouses([]);
+        }
+      } catch (error) {
+        console.error('倉庫一覧の取得エラー:', error);
+        setWarehouses([]);
+      }
+    };
+
+    fetchWarehouses();
+  }, [getAccessToken]);
 
   // ユーザー一覧の取得（実際のAPIから）
   useEffect(() => {
@@ -127,7 +166,8 @@ export default function UsersPage() {
       firstName: '',
       lastName: '',
       roleId: '',
-      password: ''
+      password: '',
+      warehouseId: ''
     });
   };
 
@@ -150,7 +190,8 @@ export default function UsersPage() {
       firstName: user.firstName || user.fullName?.split(' ')[0] || '',
       lastName: user.lastName || user.fullName?.split(' ')[1] || '',
       roleId: user.roleId?.toString() || '',
-      password: '' // 編集時はパスワードを空にする
+      password: '', // 編集時はパスワードを空にする
+      warehouseId: user.warehouseId?.toString() || ''
     });
     setShowEditForm(true);
   };
@@ -202,7 +243,8 @@ export default function UsersPage() {
           FirstName: formData.firstName,
           LastName: formData.lastName,
           RoleId: parseInt(formData.roleId),
-          Password: formData.password
+          Password: formData.password,
+          WarehouseId: formData.warehouseId ? parseInt(formData.warehouseId) : null
         })
       });
 
@@ -263,7 +305,8 @@ export default function UsersPage() {
           FirstName: formData.firstName,
           LastName: formData.lastName,
           RoleId: parseInt(formData.roleId),
-          IsActive: editingUser.isActive
+          IsActive: editingUser.isActive,
+          WarehouseId: formData.warehouseId ? parseInt(formData.warehouseId) : null
         })
       });
 
@@ -337,10 +380,10 @@ export default function UsersPage() {
   // ロール名の色分け
   const getRoleBadgeVariant = (roleId: number) => {
     switch (roleId) {
-      case 1: return 'destructive'; // Admin
-      case 2: return 'secondary'; // Clerk
-      case 3: return 'default'; // IncidentManager
-      case 4: return 'outline'; // WarehouseStaff
+      case 1: return 'destructive'; // Admin（システム管理者）
+      case 2: return 'default'; // IncidentManager（インシデント管理者）
+      case 3: return 'outline'; // WarehouseStaff（倉庫スタッフ）
+      case 4: return 'secondary'; // Clerk（事務員）
       default: return 'secondary';
     }
   };
@@ -436,6 +479,16 @@ export default function UsersPage() {
                         {user.roleName}
                       </Badge>
                     </div>
+
+                    {/* 担当倉庫（倉庫担当ユーザーの場合のみ表示） */}
+                    {user.roleId === 3 && user.warehouseName && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <div className="h-4 w-4 bg-blue-100 rounded flex items-center justify-center">
+                          <span className="text-xs text-blue-600 font-bold">倉</span>
+                        </div>
+                        <span>担当倉庫: {user.warehouseName}</span>
+                      </div>
+                    )}
 
                     {/* 最終ログイン */}
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -645,12 +698,33 @@ export default function UsersPage() {
                       required
                     >
                       <option value="">ロールを選択</option>
-                      <option value="1">Admin</option>
-                      <option value="2">Clerk</option>
-                      <option value="3">Incident Manager</option>
-                      <option value="4">Warehouse Staff</option>
+                      <option value="1">Admin（システム管理者）</option>
+                      <option value="2">IncidentManager（インシデント管理者）</option>
+                      <option value="3">WarehouseStaff（倉庫スタッフ）</option>
+                      <option value="4">Clerk（事務員）</option>
                     </select>
                   </div>
+                  {formData.roleId === '3' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        担当倉庫 <span className="text-red-500">*</span>
+                      </label>
+                      <select 
+                        name="warehouseId"
+                        value={formData.warehouseId}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">倉庫を選択</option>
+                        {warehouses.map((warehouse) => (
+                          <option key={warehouse.id} value={warehouse.id}>
+                            {warehouse.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="flex space-x-2 pt-4">
                     <Button
                       type="button"
@@ -759,12 +833,33 @@ export default function UsersPage() {
                       required
                     >
                       <option value="">ロールを選択</option>
-                      <option value="1">Admin</option>
-                      <option value="2">Clerk</option>
-                      <option value="3">Incident Manager</option>
-                      <option value="4">Warehouse Staff</option>
+                      <option value="1">Admin（システム管理者）</option>
+                      <option value="2">IncidentManager（インシデント管理者）</option>
+                      <option value="3">WarehouseStaff（倉庫スタッフ）</option>
+                      <option value="4">Clerk（事務員）</option>
                     </select>
                   </div>
+                  {formData.roleId === '3' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        担当倉庫 <span className="text-red-500">*</span>
+                      </label>
+                      <select 
+                        name="warehouseId"
+                        value={formData.warehouseId}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">倉庫を選択</option>
+                        {warehouses.map((warehouse) => (
+                          <option key={warehouse.id} value={warehouse.id}>
+                            {warehouse.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       パスワード

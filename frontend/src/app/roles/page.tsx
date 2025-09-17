@@ -101,10 +101,10 @@ export default function RolesPage() {
   // ロールの色分け
   const getRoleBadgeVariant = (roleId: number) => {
     switch (roleId) {
-      case 1: return 'destructive'; // Admin
-      case 2: return 'secondary'; // Clerk
-      case 3: return 'default'; // IncidentManager
-      case 4: return 'outline'; // WarehouseStaff
+      case 1: return 'destructive'; // Admin（システム管理者）
+      case 2: return 'default'; // IncidentManager（インシデント管理者）
+      case 3: return 'outline'; // WarehouseStaff（倉庫スタッフ）
+      case 4: return 'secondary'; // Clerk（事務員）
       default: return 'secondary';
     }
   };

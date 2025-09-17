@@ -215,9 +215,27 @@ class ApiClient {
 	}
 
 	async updateIncident(id: number, data: UpdateIncidentDto): Promise<Incident> {
+		// バックエンドの期待するフィールド名に変換
+		const apiData = {
+			...data,
+			TroubleType: data.troubleTypeId,
+			DamageType: data.damageTypeId,
+			Warehouse: data.warehouseId,
+			ShippingCompany: data.shippingCompanyId,
+			Resolution: data.resolution,
+			// 元のフィールド名を削除
+			troubleTypeId: undefined,
+			damageTypeId: undefined,
+			warehouseId: undefined,
+			shippingCompanyId: undefined,
+			resolution: undefined,
+		};
+		
+		
+		
 		return this.request<Incident>(`/api/incidents/${id}`, {
 			method: 'PUT',
-			body: JSON.stringify(data),
+			body: JSON.stringify(apiData),
 		});
 	}
 

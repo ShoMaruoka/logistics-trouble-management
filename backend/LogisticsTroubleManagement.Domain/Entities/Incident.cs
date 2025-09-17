@@ -28,6 +28,8 @@ public class Incident : BaseEntity
     public string? PreventionMeasures { get; private set; } // 再発防止策
     public DateTime? EffectivenessDate { get; private set; } // 有効性確認日
     public string EffectivenessComment { get; private set; } = string.Empty; // 有効性確認コメント
+    public string? ClassificationNotes { get; private set; } // 分類メモ
+    public DateTime? ExpectedResolutionDate { get; private set; } // 期待解決日
     
     public int ReportedById { get; private set; }
     public int? AssignedToId { get; private set; }
@@ -260,5 +262,31 @@ public class Incident : BaseEntity
     public void SetReportedDate(DateTime reportedDate)
     {
         ReportedDate = reportedDate;
+    }
+
+    // 倉庫担当用メソッド - インシデントの分類
+    public void UpdateCategory(string category, string? classificationNotes = null)
+    {
+        Category = category ?? throw new ArgumentNullException(nameof(category));
+        ClassificationNotes = classificationNotes;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // 倉庫担当用メソッド - インシデントの詳細更新
+    public void UpdateDetails(string title, string description, string summary, string cause, 
+        string preventionMeasures, string category, string? classificationNotes, 
+        IncidentStatus status, Priority priority, DateTime? expectedResolutionDate = null)
+    {
+        Title = title ?? throw new ArgumentNullException(nameof(title));
+        Description = description ?? throw new ArgumentNullException(nameof(description));
+        Summary = summary ?? throw new ArgumentNullException(nameof(summary));
+        Cause = cause ?? throw new ArgumentNullException(nameof(cause));
+        PreventionMeasures = preventionMeasures ?? throw new ArgumentNullException(nameof(preventionMeasures));
+        Category = category ?? throw new ArgumentNullException(nameof(category));
+        ClassificationNotes = classificationNotes;
+        Status = status;
+        Priority = priority;
+        ExpectedResolutionDate = expectedResolutionDate;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

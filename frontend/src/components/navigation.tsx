@@ -18,16 +18,26 @@ import {
   LogOut,
   User,
   Users,
-  Shield
+  Shield,
+  Warehouse,
+  CheckCircle2,
+  Clock,
+  Filter
 } from "lucide-react";
 
 // ナビゲーション項目の定義（権限チェック付き）
-const getNavigationItems = (permissions: ReturnType<typeof useRolePermissions>) => [
+const getNavigationItems = (permissions: ReturnType<typeof useRolePermissions>, userRoleId?: number) => [
   { name: 'ダッシュボード', href: '/', icon: Home, show: true },
   { name: 'トラブル管理', href: '/incidents', icon: AlertTriangle, show: permissions.canViewIncidents },
   { name: '統計・分析', href: '/statistics', icon: BarChart3, show: permissions.canViewStatistics },
   { name: 'ファイル管理', href: '/attachments', icon: FileText, show: permissions.canViewIncidents },
   { name: '効果測定', href: '/effectiveness', icon: TrendingUp, show: permissions.canManageEffectiveness },
+  // 倉庫担当専用メニュー
+  { name: '未解決インシデント', href: '/warehouse-staff/unresolved', icon: AlertTriangle, show: userRoleId === 3 },
+  { name: '対応中インシデント', href: '/warehouse-staff/in-progress', icon: Clock, show: userRoleId === 3 },
+  { name: '担当倉庫インシデント', href: '/warehouse-staff/assigned-warehouse', icon: Warehouse, show: userRoleId === 3 },
+  { name: '分類済みインシデント', href: '/warehouse-staff/classified', icon: CheckCircle2, show: userRoleId === 3 },
+  // 管理者専用メニュー
   { name: 'マスタ管理', href: '/master', icon: Database, show: permissions.canManageMasters },
   { name: 'ユーザー管理', href: '/users', icon: Users, show: permissions.canManageUsers },
   { name: 'ロール管理', href: '/roles', icon: Shield, show: permissions.canManageUsers },
@@ -53,7 +63,7 @@ export function Navigation() {
   }
 
   // 権限に基づいてナビゲーション項目をフィルタリング
-  const navigationItems = getNavigationItems(permissions).filter(item => item.show);
+  const navigationItems = getNavigationItems(permissions, user?.roleId).filter(item => item.show);
 
   return (
     <nav className="bg-white shadow-sm border-b">

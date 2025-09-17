@@ -33,6 +33,13 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
 		builder.Property(i => i.Resolution)
 			.IsRequired(false);
 
+		// 新規追加プロパティ
+		builder.Property(i => i.ClassificationNotes)
+			.IsRequired(false)
+			.HasMaxLength(500);
+		builder.Property(i => i.ExpectedResolutionDate)
+			.IsRequired(false);
+
 		builder.Property(i => i.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
 		builder.Property(i => i.UpdatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
 

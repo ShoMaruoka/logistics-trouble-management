@@ -8,7 +8,7 @@ import { IncidentList } from "@/components/incident-list";
 import { IncidentSearch } from "@/components/incident-search";
 import { Pagination } from "@/components/pagination";
 import { IncidentDetail } from "@/components/incident-detail";
-import { IncidentForm } from "@/components/incident-form";
+import { IncidentModal } from "@/components/IncidentModal";
 import { FilterControls } from "@/components/filter-controls";
 import { useFilter } from "@/contexts/FilterContext";
 import { 
@@ -170,11 +170,16 @@ export default function IncidentsPage() {
   };
 
   const handleFormSubmit = async (data: CreateIncidentDto | UpdateIncidentDto) => {
+    console.log('handleFormSubmit called:', { editingIncident, data });
     try {
       if (editingIncident) {
+        console.log('Updating incident:', editingIncident.id, data);
         await updateIncident(editingIncident.id, data as UpdateIncidentDto);
+        console.log('Update completed successfully');
       } else {
+        console.log('Creating new incident:', data);
         await createIncident(data as CreateIncidentDto);
+        console.log('Create completed successfully');
       }
       setShowForm(false);
       setEditingIncident(null);
@@ -203,29 +208,49 @@ export default function IncidentsPage() {
     setSelectedIncident(null);
   };
 
+  const handleCSVExport = () => {
+    // CSV出力機能（将来的に実装）
+    console.log('CSV出力機能');
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* ヘッダー */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">トラブル管理</h1>
-          <p className="text-gray-600 mt-2">インシデントの一覧、検索、管理を行います</p>
-        </div>
-        <Button onClick={handleCreateIncident} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          新規インシデント
-        </Button>
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">インシデント管理</h1>
+        <h2 className="text-xl font-bold text-gray-900">物流トラブル一覧</h2>
       </div>
 
       {/* 年度・月フィルタ */}
       <FilterControls />
 
-      {/* 検索・フィルタリング */}
-      <IncidentSearch
-        searchParams={searchParams}
-        onSearchChange={handleSearchChange}
-        onClear={handleSearchClear}
-      />
+      {/* 検索・CSV出力 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex gap-4 items-center">
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="物流トラブルを検索..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => handleSearchChange({ ...searchParams, searchTerm: e.target.value })}
+            />
+          </div>
+          <Button 
+            onClick={handleCSVExport} 
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            CSV出力
+          </Button>
+        </div>
+      </div>
 
       {/* エラー表示 */}
       {incidentsError && (
@@ -240,30 +265,65 @@ export default function IncidentsPage() {
       )}
 
       {/* インシデント一覧 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>インシデント一覧</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <IncidentList
-            incidents={incidentsData?.items || []}
-            requestSort={handleSort}
-            sortConfig={sortConfig}
-            onEdit={handleIncidentClick}
-            onDelete={handleDeleteIncident}
-            loading={incidentsLoading || deleteLoading}
-          />
-        </CardContent>
-      </Card>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <IncidentList
+          incidents={incidentsData?.items || []}
+          requestSort={handleSort}
+          sortConfig={sortConfig}
+          onEdit={handleIncidentClick}
+          onDelete={handleDeleteIncident}
+          loading={incidentsLoading || deleteLoading}
+        />
+      </div>
 
       {/* ページネーション */}
-      {incidentsData && incidentsData.totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination
-            currentPage={incidentsData.page}
-            totalPages={incidentsData.totalPages}
-            onPageChange={handlePageChange}
-          />
+      {incidentsData && (
+        <div className="bg-white px-6 py-3 flex items-center justify-between border-t border-gray-200">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setSearchParams(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+              disabled={searchParams.page <= 1}
+            >
+              前へ
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setSearchParams(prev => ({ ...prev, page: Math.min(incidentsData.totalPages, prev.page + 1) }))}
+              disabled={searchParams.page >= incidentsData.totalPages}
+            >
+              次へ
+            </Button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">{incidentsData.totalCount}</span>件中
+                <span className="font-medium">{(searchParams.page - 1) * searchParams.pageSize + 1}</span>-
+                <span className="font-medium">{Math.min(searchParams.page * searchParams.pageSize, incidentsData.totalCount)}</span>件を表示
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <Button
+                  variant="outline"
+                  onClick={() => setSearchParams(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={searchParams.page <= 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                  前へ
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSearchParams(prev => ({ ...prev, page: Math.min(incidentsData.totalPages, prev.page + 1) }))}
+                  disabled={searchParams.page >= incidentsData.totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                  次へ
+                </Button>
+              </nav>
+            </div>
+          </div>
         </div>
       )}
 
@@ -277,28 +337,19 @@ export default function IncidentsPage() {
       )}
 
       {/* フォームモーダル */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">
-                  {editingIncident ? 'インシデント編集' : '新規インシデント作成'}
-                </h2>
-                <Button variant="outline" onClick={handleFormCancel}>
-                  閉じる
-                </Button>
-              </div>
-              <IncidentForm
-                incident={editingIncident}
-                onSubmit={handleFormSubmit}
-                onCancel={handleFormCancel}
-                loading={createLoading || updateLoading}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <IncidentModal
+        open={showForm}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleFormCancel();
+          }
+        }}
+        incident={editingIncident}
+        onSubmit={handleFormSubmit}
+        loading={createLoading || updateLoading}
+        title={editingIncident ? 'インシデント編集' : '新規インシデント作成'}
+        description={editingIncident ? 'インシデントの情報を編集してください。' : '新しいインシデントを作成してください。'}
+      />
     </div>
   );
 }

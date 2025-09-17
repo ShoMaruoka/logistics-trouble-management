@@ -4,6 +4,7 @@ using LogisticsTroubleManagement.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LogisticsTroubleManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250909030206_AddWarehouseIdToUsers")]
+    partial class AddWarehouseIdToUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -250,10 +253,6 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
                     b.Property<string>("Cause")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ClassificationNotes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -278,9 +277,6 @@ namespace LogisticsTroubleManagement.Infrastructure.Migrations
 
                     b.Property<int>("EffectivenessStatus")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("ExpectedResolutionDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("IncidentDetails")
                         .IsRequired()
