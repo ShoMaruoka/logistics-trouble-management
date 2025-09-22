@@ -124,6 +124,9 @@ builder.Services.AddScoped<IPasswordManagementService, PasswordManagementService
 // Add Master Data Resolver Service
 builder.Services.AddScoped<IMasterDataResolverService, MasterDataResolverService>();
 
+// Add Workflow Validation Service
+builder.Services.AddScoped<IWorkflowValidationService, LogisticsTroubleManagement.Infrastructure.Services.WorkflowValidationService>();
+
 // 倉庫担当専用サービス
 builder.Services.AddScoped<IWarehouseStaffService, LogisticsTroubleManagement.Infrastructure.Services.WarehouseStaffService>();
 

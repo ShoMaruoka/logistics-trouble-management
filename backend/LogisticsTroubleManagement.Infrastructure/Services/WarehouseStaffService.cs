@@ -41,7 +41,7 @@ public class WarehouseStaffService : IWarehouseStaffService
             .CountAsync(i => i.WarehouseId == warehouseId);
 
         var unresolvedIncidents = await _context.Incidents
-            .CountAsync(i => i.WarehouseId == warehouseId && i.Status == IncidentStatus.Open);
+            .CountAsync(i => i.WarehouseId == warehouseId && i.Status == IncidentStatus.Pending);
 
         var inProgressIncidents = await _context.Incidents
             .CountAsync(i => i.WarehouseId == warehouseId && i.Status == IncidentStatus.InProgress);
@@ -194,7 +194,7 @@ public class WarehouseStaffService : IWarehouseStaffService
             .Include(i => i.Warehouse)
             .Include(i => i.TroubleType)
             .Include(i => i.DamageType)
-            .Where(i => i.WarehouseId == user.WarehouseId && i.Status == IncidentStatus.Open);
+            .Where(i => i.WarehouseId == user.WarehouseId && i.Status == IncidentStatus.Pending);
 
         // 検索条件の適用
         query = ApplySearchFilters(query, searchDto);
@@ -291,7 +291,7 @@ public class WarehouseStaffService : IWarehouseStaffService
         );
     }
 
-    public async Task<bool> ClassifyIncidentAsync(int userId, ClassifyIncidentDto classifyDto)
+    public async Task<bool> ClassifyIncidentAsync(int userId, LegacyClassifyIncidentDto classifyDto)
     {
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == userId);

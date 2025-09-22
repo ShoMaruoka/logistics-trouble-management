@@ -41,10 +41,12 @@ public class StatisticsController : ControllerBase
 		}
 
 			var total = incidents.Count();
-			var open = incidents.Count(i => i.Status == IncidentStatus.Open);
+			var unclassified = incidents.Count(i => i.Status == IncidentStatus.Unclassified);
+			var pending = incidents.Count(i => i.Status == IncidentStatus.Pending);
 			var inProgress = incidents.Count(i => i.Status == IncidentStatus.InProgress);
-			var resolved = incidents.Count(i => i.Status == IncidentStatus.Resolved);
-			var closed = incidents.Count(i => i.Status == IncidentStatus.Closed);
+			var completed = incidents.Count(i => i.Status == IncidentStatus.Completed);
+			var preventionProposed = incidents.Count(i => i.Status == IncidentStatus.PreventionProposed);
+			var effectivenessConfirmed = incidents.Count(i => i.Status == IncidentStatus.EffectivenessConfirmed);
 
 			var critical = incidents.Count(i => i.Priority == Priority.Critical);
 			var high = incidents.Count(i => i.Priority == Priority.High);
@@ -52,7 +54,7 @@ public class StatisticsController : ControllerBase
 			var low = incidents.Count(i => i.Priority == Priority.Low);
 
 			// 平均解決時間の計算（解決済み・クローズ済みのインシデントのみ）
-			var resolvedIncidents = incidents.Where(i => i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Closed).ToList();
+			var resolvedIncidents = incidents.Where(i => i.Status == IncidentStatus.Completed || i.Status == IncidentStatus.PreventionProposed || i.Status == IncidentStatus.EffectivenessConfirmed).ToList();
 			var avg = resolvedIncidents.Any() ? resolvedIncidents.Average(i => ((i.ResolvedDate ?? i.UpdatedAt) - i.ReportedDate).TotalDays) : 0;
 			
 			var ppm = await _incidentRepository.GetPPMAsync(totalShipments);
@@ -60,10 +62,10 @@ public class StatisticsController : ControllerBase
 			var dto = new StatisticsSummaryDto
 			{
 				TotalIncidents = total,
-				OpenCount = open,
+				OpenCount = unclassified + pending, // 未分類 + 未対応 = 未解決扱い
 				InProgressCount = inProgress,
-				ResolvedCount = resolved,
-				ClosedCount = closed,
+				ResolvedCount = completed + preventionProposed + effectivenessConfirmed, // 対応済以降は解決済扱い
+				ClosedCount = effectivenessConfirmed, // 有効性確認済のみクローズ扱い
 				CriticalCount = critical,
 				HighCount = high,
 				MediumCount = medium,

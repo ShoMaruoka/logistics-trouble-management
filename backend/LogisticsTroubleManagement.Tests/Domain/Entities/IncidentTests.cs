@@ -29,7 +29,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
             Assert.Equal(description, incident.Description);
             Assert.Equal(category, incident.Category);
             Assert.Equal(priority, incident.Priority);
-            Assert.Equal(IncidentStatus.Open, incident.Status);
+            Assert.Equal(IncidentStatus.Unclassified, incident.Status); // 新仕様：未分類から開始
             Assert.Equal(reportedById, incident.ReportedById);
             Assert.NotEqual(default(DateTime), incident.ReportedDate);
             Assert.NotEqual(default(DateTime), incident.CreatedAt);
@@ -120,7 +120,7 @@ namespace LogisticsTroubleManagement.Tests.Domain.Entities
             incident.Resolve(resolution);
 
             // Assert
-            Assert.Equal(IncidentStatus.Resolved, incident.Status);
+            Assert.Equal(IncidentStatus.Completed, incident.Status); // 新仕様：対応済
             Assert.Equal(resolution, incident.Resolution);
             Assert.NotNull(incident.ResolvedDate);
             Assert.NotEqual(default(DateTime), incident.UpdatedAt);

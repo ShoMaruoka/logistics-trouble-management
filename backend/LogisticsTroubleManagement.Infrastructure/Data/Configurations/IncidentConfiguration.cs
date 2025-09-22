@@ -40,6 +40,39 @@ public class IncidentConfiguration : IEntityTypeConfiguration<Incident>
 		builder.Property(i => i.ExpectedResolutionDate)
 			.IsRequired(false);
 
+		// WorkflowStatusは削除 - 新仕様ではStatusに統合
+		
+		builder.Property(i => i.DueDate)
+			.IsRequired(false)
+			.HasComment("対応期限");
+		
+		// ワークフロー進捗日付
+		builder.Property(i => i.ResponseStartDate)
+			.IsRequired(false)
+			.HasComment("対応開始日");
+		
+		builder.Property(i => i.CauseAnalysisDate)
+			.IsRequired(false)
+			.HasComment("原因入力日");
+		
+		builder.Property(i => i.CompletionDate)
+			.IsRequired(false)
+			.HasComment("対応完了日");
+		
+		builder.Property(i => i.PreventionProposalDate)
+			.IsRequired(false)
+			.HasComment("再発防止策提案日");
+		
+		builder.Property(i => i.EffectivenessConfirmationDate)
+			.IsRequired(false)
+			.HasComment("有効性確認日");
+		
+		// 新作業内容フィールド
+		builder.Property(i => i.ResponseContent)
+			.IsRequired(false)
+			.HasMaxLength(2000)
+			.HasComment("対応内容");
+
 		builder.Property(i => i.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
 		builder.Property(i => i.UpdatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
 

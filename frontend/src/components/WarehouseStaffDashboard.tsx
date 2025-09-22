@@ -322,9 +322,9 @@ export function WarehouseStaffDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="px-6 py-3 border-b border-gray-200">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="unresolved">
-                未解決 ({dashboardData.unresolvedIncidents})
-              </TabsTrigger>
+                <TabsTrigger value="unresolved">
+                  未対応 ({dashboardData.unresolvedIncidents})
+                </TabsTrigger>
               <TabsTrigger value="in-progress">
                 対応中 ({dashboardData.inProgressIncidents})
               </TabsTrigger>

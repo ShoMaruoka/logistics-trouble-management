@@ -132,27 +132,27 @@ namespace LogisticsTroubleManagement.Tests.Infrastructure.Repositories
         public async Task GetByStatusAsync_ShouldReturnIncidentsWithStatus()
         {
             // Arrange
-            var incidents = new List<Incident>
-            {
-                CreateTestIncident("オープン1"),
-                CreateTestIncident("オープン2")
-            };
+            var incident1 = CreateTestIncident("未対応1");
+            incident1.UpdateStatus(IncidentStatus.Pending); // 新仕様：未対応に設定
+            
+            var incident2 = CreateTestIncident("未対応2");
+            incident2.UpdateStatus(IncidentStatus.Pending); // 新仕様：未対応に設定
 
             var resolvedIncident = CreateTestIncident("解決済み");
             resolvedIncident.Resolve("解決しました");
 
-            incidents.Add(resolvedIncident);
+            var incidents = new List<Incident> { incident1, incident2, resolvedIncident };
 
             await _context.Incidents.AddRangeAsync(incidents);
             await _context.SaveChangesAsync();
 
             // Act
-            var openIncidents = await _repository.GetByStatusAsync(IncidentStatus.Open);
+            var pendingIncidents = await _repository.GetByStatusAsync(IncidentStatus.Pending); // 新仕様：未対応
 
             // Assert
-            Assert.NotNull(openIncidents);
-            Assert.Equal(2, openIncidents.Count());
-            Assert.All(openIncidents, i => Assert.Equal(IncidentStatus.Open, i.Status));
+            Assert.NotNull(pendingIncidents);
+            Assert.Equal(2, pendingIncidents.Count());
+            Assert.All(pendingIncidents, i => Assert.Equal(IncidentStatus.Pending, i.Status));
         }
 
         [Fact]

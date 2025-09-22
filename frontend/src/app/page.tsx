@@ -14,10 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IncidentForm } from "@/components/incident-form";
+import { RoleBasedIncidentForm } from "@/components/role-based-incident-form";
 import { RoleBasedDashboard } from "@/components/RoleBasedDashboard";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import type { Incident, CreateIncidentDto, UpdateIncidentDto } from "@/lib/types";
+import type { 
+  Incident, 
+  CreateIncidentDto, 
+  UpdateIncidentDto, 
+  IncidentWithWorkflow,
+  WorkflowMode 
+} from "@/lib/types";
 import { Logo } from "@/components/icons";
 import { 
   useCreateIncident, 
@@ -25,6 +31,7 @@ import {
   useDeleteIncident
 } from "@/lib/hooks";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/lib/api-client";
 
 export default function Home() {
   const router = useRouter();
@@ -38,28 +45,43 @@ export default function Home() {
 
   const handleCreateIncident = async (data: CreateIncidentDto) => {
     try {
-      await createIncident({
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        priority: data.priority,
-        troubleTypeId: data.troubleTypeId,
-        damageTypeId: data.damageTypeId,
-        warehouseId: data.warehouseId,
-        shippingCompanyId: data.shippingCompanyId,
-        incidentDetails: data.incidentDetails,
-        totalShipments: data.totalShipments,
-        defectiveItems: data.defectiveItems,
-        occurrenceDate: data.occurrenceDate,
-        occurrenceLocation: data.occurrenceLocation,
-        summary: data.summary,
-        cause: data.cause,
-        preventionMeasures: data.preventionMeasures,
-        effectivenessStatus: data.effectivenessStatus,
-        effectivenessDate: data.effectivenessDate || null,
-        effectivenessComment: data.effectivenessComment,
-        reportedById: 1 // 仮のユーザーID
-      });
+      // 事務員の場合は専用APIを使用
+      if (user?.roleId === 4 && !editingIncident) {
+        // 事務員用のデータ構造にキャスト
+        const clerkData = data as any;
+        await apiClient.createClerkIncident({
+          title: clerkData.title,
+          description: clerkData.description,
+          incidentDetails: clerkData.incidentDetails,
+          occurrenceDate: clerkData.occurrenceDate,
+          occurrenceLocation: clerkData.occurrenceLocation,
+          reportedById: clerkData.reportedById,
+        });
+      } else {
+        // 従来のAPI使用
+        await createIncident({
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          priority: data.priority,
+          troubleTypeId: data.troubleTypeId,
+          damageTypeId: data.damageTypeId,
+          warehouseId: data.warehouseId,
+          shippingCompanyId: data.shippingCompanyId,
+          incidentDetails: data.incidentDetails,
+          totalShipments: data.totalShipments,
+          defectiveItems: data.defectiveItems,
+          occurrenceDate: data.occurrenceDate,
+          occurrenceLocation: data.occurrenceLocation,
+          summary: data.summary,
+          cause: data.cause,
+          preventionMeasures: data.preventionMeasures,
+          effectivenessStatus: data.effectivenessStatus,
+          effectivenessDate: data.effectivenessDate || null,
+          effectivenessComment: data.effectivenessComment,
+          reportedById: 1 // 仮のユーザーID
+        });
+      }
       setIsDialogOpen(false);
       // サーバーコンポーネントを再検証
       router.refresh();
@@ -105,7 +127,27 @@ export default function Home() {
   // フォームsubmitラッパー（型整合のため）
   const handleFormSubmit = async (data: CreateIncidentDto | UpdateIncidentDto) => {
     if (editingIncident) {
-      await handleUpdateIncident(data as UpdateIncidentDto);
+      // 事務員が自分のインシデントを編集する場合は専用APIを使用
+      if (user?.roleId === 4 && editingIncident.reportedById === user.id) {
+        try {
+          const clerkData = data as any;
+          await apiClient.updateClerkIncident(editingIncident.id, {
+            title: clerkData.title,
+            description: clerkData.description,
+            incidentDetails: clerkData.incidentDetails,
+            occurrenceDate: clerkData.occurrenceDate,
+            occurrenceLocation: clerkData.occurrenceLocation,
+            reportedById: user.id,
+          });
+          setIsDialogOpen(false);
+          setEditingIncident(null);
+          router.refresh();
+        } catch (error) {
+          console.error('事務員インシデント更新エラー:', error);
+        }
+      } else {
+        await handleUpdateIncident(data as UpdateIncidentDto);
+      }
     } else {
       await handleCreateIncident(data as CreateIncidentDto);
     }
@@ -171,7 +213,7 @@ export default function Home() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto">
-              <IncidentForm
+              <RoleBasedIncidentForm
                 incident={editingIncident}
                 onSubmit={handleFormSubmit}
                 loading={createLoading || updateLoading}

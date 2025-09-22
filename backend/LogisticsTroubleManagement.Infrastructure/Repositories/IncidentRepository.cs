@@ -39,20 +39,21 @@ public class IncidentRepository : Repository<Incident>, IIncidentRepository
 
     public async Task<IEnumerable<Incident>> GetActiveIncidentsAsync()
     {
-        return await _dbSet.Where(i => i.Status == IncidentStatus.Open || i.Status == IncidentStatus.InProgress).ToListAsync();
+        return await _dbSet.Where(i => i.Status == IncidentStatus.Unclassified || i.Status == IncidentStatus.Pending || i.Status == IncidentStatus.InProgress).ToListAsync();
     }
 
     public async Task<IEnumerable<Incident>> GetResolvedIncidentsAsync()
     {
-        return await _dbSet.Where(i => i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Closed).ToListAsync();
+        return await _dbSet.Where(i => i.Status == IncidentStatus.Completed || i.Status == IncidentStatus.PreventionProposed || i.Status == IncidentStatus.EffectivenessConfirmed).ToListAsync();
     }
 
     public async Task<IEnumerable<Incident>> GetOverdueIncidentsAsync(TimeSpan expectedResolutionTime)
     {
         var cutoffDate = DateTime.UtcNow.Subtract(expectedResolutionTime);
         return await _dbSet
-            .Where(i => i.Status != IncidentStatus.Resolved && 
-                       i.Status != IncidentStatus.Closed && 
+            .Where(i => i.Status != IncidentStatus.Completed && 
+                       i.Status != IncidentStatus.PreventionProposed && 
+                       i.Status != IncidentStatus.EffectivenessConfirmed && 
                        i.ReportedDate < cutoffDate)
             .ToListAsync();
     }
@@ -88,7 +89,7 @@ public class IncidentRepository : Repository<Incident>, IIncidentRepository
             return 0;
 
         var resolvedIncidents = await _dbSet
-            .Where(i => i.Status == IncidentStatus.Resolved || i.Status == IncidentStatus.Closed)
+            .Where(i => i.Status == IncidentStatus.Completed || i.Status == IncidentStatus.PreventionProposed || i.Status == IncidentStatus.EffectivenessConfirmed)
             .CountAsync();
 
         return (decimal)resolvedIncidents / totalShipments * 1000000;

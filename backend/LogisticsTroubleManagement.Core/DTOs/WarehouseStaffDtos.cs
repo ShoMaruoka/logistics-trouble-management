@@ -57,9 +57,10 @@ public class WarehouseStaffIncidentSearchDto
 }
 
 /// <summary>
-/// 倉庫担当用インシデント分類DTO
+/// 倉庫担当用インシデント分類DTO（レガシー版）
+/// 新しいワークフローではIncidentWorkflowDtos.csのClassifyIncidentDtoを使用
 /// </summary>
-public class ClassifyIncidentDto
+public class LegacyClassifyIncidentDto
 {
     public int IncidentId { get; set; }
     public string Category { get; set; } = string.Empty;

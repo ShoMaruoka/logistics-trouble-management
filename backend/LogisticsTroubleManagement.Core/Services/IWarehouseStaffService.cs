@@ -39,7 +39,7 @@ public interface IWarehouseStaffService
     /// <summary>
     /// インシデントを分類する
     /// </summary>
-    Task<bool> ClassifyIncidentAsync(int userId, ClassifyIncidentDto classifyDto);
+    Task<bool> ClassifyIncidentAsync(int userId, LegacyClassifyIncidentDto classifyDto);
 
     /// <summary>
     /// インシデントを更新する（倉庫担当権限内）

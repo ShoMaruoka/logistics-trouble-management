@@ -151,7 +151,7 @@ public class WarehouseStaffController : ControllerBase
     /// インシデントを分類する
     /// </summary>
     [HttpPost("incidents/classify")]
-    public async Task<ActionResult> ClassifyIncident([FromBody] ClassifyIncidentDto classifyDto)
+    public async Task<ActionResult> ClassifyIncident([FromBody] LegacyClassifyIncidentDto classifyDto)
     {
         try
         {

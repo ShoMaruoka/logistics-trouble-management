@@ -214,6 +214,55 @@ class ApiClient {
 		});
 	}
 
+	// 事務員専用のインシデント作成API
+	async createClerkIncident(data: {
+		title: string;
+		description: string;
+		incidentDetails: string;
+		occurrenceDate: string;
+		occurrenceLocation: string;
+		reportedById: number;
+	}): Promise<Incident> {
+		// プロパティ名を大文字に変換
+		const apiData = {
+			Title: data.title,
+			Description: data.description,
+			IncidentDetails: data.incidentDetails,
+			OccurrenceDate: data.occurrenceDate,
+			OccurrenceLocation: data.occurrenceLocation,
+			ReportedById: data.reportedById,
+		};
+
+		return this.request<Incident>('/api/incidents/clerk', {
+			method: 'POST',
+			body: JSON.stringify(apiData),
+		});
+	}
+
+	// 事務員専用のインシデント更新API
+	async updateClerkIncident(id: number, data: {
+		title: string;
+		description: string;
+		incidentDetails: string;
+		occurrenceDate: string;
+		occurrenceLocation: string;
+		reportedById: number;
+	}): Promise<Incident> {
+		// プロパティ名を大文字に変換
+		const apiData = {
+			Title: data.title,
+			Description: data.description,
+			IncidentDetails: data.incidentDetails,
+			OccurrenceDate: data.occurrenceDate,
+			OccurrenceLocation: data.occurrenceLocation,
+			ReportedById: data.reportedById,
+		};
+		return this.request<Incident>(`/api/incidents/clerk/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(apiData),
+		});
+	}
+
 	async updateIncident(id: number, data: UpdateIncidentDto): Promise<Incident> {
 		// バックエンドの期待するフィールド名に変換
 		const apiData = {
@@ -554,6 +603,58 @@ class ApiClient {
 	async delete<T>(endpoint: string): Promise<T> {
 		return this.request<T>(endpoint, { method: 'DELETE' });
 	}
+
+	// ワークフロー関連API
+	async enableWorkflow(incidentId: number): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/enable-workflow`, {
+			method: 'POST',
+		});
+	}
+
+	async classifyIncident(incidentId: number, data: Omit<ClassifyIncidentDto, 'incidentId'>): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/classify`, {
+			method: 'POST',
+			body: JSON.stringify({ ...data, incidentId }),
+		});
+	}
+
+	async startResponse(incidentId: number): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/start-response`, {
+			method: 'POST',
+		});
+	}
+
+	async analyzeCause(incidentId: number, cause: string): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/analyze-cause`, {
+			method: 'POST',
+			body: JSON.stringify({ incidentId, cause }),
+		});
+	}
+
+	async completeResponse(incidentId: number, responseContent: string): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/complete-response`, {
+			method: 'POST',
+			body: JSON.stringify({ incidentId, responseContent }),
+		});
+	}
+
+	async proposePrevention(incidentId: number, preventionMeasures: string): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/propose-prevention`, {
+			method: 'POST',
+			body: JSON.stringify({ incidentId, preventionMeasures }),
+		});
+	}
+
+	async confirmEffectiveness(incidentId: number, effectivenessStatus: string, effectivenessComment: string): Promise<WorkflowActionResultDto> {
+		return this.request<WorkflowActionResultDto>(`/api/incidents/${incidentId}/confirm-effectiveness`, {
+			method: 'POST',
+			body: JSON.stringify({ incidentId, effectivenessStatus, effectivenessComment }),
+		});
+	}
+
+	async getWorkflowStatistics(): Promise<WorkflowStatisticsDto> {
+		return this.request<WorkflowStatisticsDto>('/api/incidents/workflow-statistics');
+	}
 }
 
 // 型インポート
@@ -587,6 +688,15 @@ import type {
 	UpdateWarehouseDto,
 	CreateShippingCompanyDto,
 	UpdateShippingCompanyDto,
+	// ワークフロー関連型
+	WorkflowActionResultDto,
+	ClassifyIncidentDto,
+	StartResponseDto,
+	AnalyzeCauseDto,
+	CompleteResponseDto,
+	ProposePreventionDto,
+	ConfirmEffectivenessDto,
+	WorkflowStatisticsDto,
 } from './types';
 
 // シングルトンインスタンス

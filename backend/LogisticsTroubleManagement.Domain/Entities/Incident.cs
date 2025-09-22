@@ -31,6 +31,19 @@ public class Incident : BaseEntity
     public string? ClassificationNotes { get; private set; } // 分類メモ
     public DateTime? ExpectedResolutionDate { get; private set; } // 期待解決日
     
+    // WorkflowStatusは削除し、Statusに統合（新仕様完全準拠）
+    public DateTime? DueDate { get; private set; } // 対応期限
+    
+    // ワークフロー進捗日付
+    public DateTime? ResponseStartDate { get; private set; } // 対応開始日
+    public DateTime? CauseAnalysisDate { get; private set; } // 原因入力日
+    public DateTime? CompletionDate { get; private set; } // 対応完了日
+    public DateTime? PreventionProposalDate { get; private set; } // 再発防止策提案日
+    public DateTime? EffectivenessConfirmationDate { get; private set; } // 有効性確認日
+    
+    // 新作業内容フィールド
+    public string? ResponseContent { get; private set; } // 対応内容
+    
     public int ReportedById { get; private set; }
     public int? AssignedToId { get; private set; }
     public DateTime ReportedDate { get; private set; }
@@ -67,7 +80,7 @@ public class Incident : BaseEntity
         ShippingCompanyId = shippingCompanyId;
         EffectivenessStatus = EffectivenessStatus.NotImplemented;
         Priority = priority;
-        Status = IncidentStatus.Open;
+        Status = IncidentStatus.Unclassified; // 新仕様：未分類から開始
         
         // 新規追加項目
         IncidentDetails = incidentDetails;
@@ -102,6 +115,37 @@ public class Incident : BaseEntity
             occurrenceLocation, summary, cause, preventionMeasures);
     }
 
+    /// <summary>
+    /// 事務員専用のインシデント作成（enum検証をスキップして新ワークフローで管理）
+    /// </summary>
+    public static Incident CreateForClerk(string title, string description, int reportedById, 
+        string incidentDetails, DateTime occurrenceDate, string occurrenceLocation = "")
+    {
+        var incident = new Incident(
+            title, 
+            description, 
+            "", // Category 空
+            reportedById,
+            (int)Enums.TroubleType.ProductTrouble, // デフォルト値
+            (int)Enums.DamageType.None, // デフォルト値
+            (int)Enums.Warehouse.None, // デフォルト値
+            (int)Enums.ShippingCompany.None, // デフォルト値
+            occurrenceDate,
+            Priority.Medium,
+            incidentDetails,
+            0, // TotalShipments
+            0, // DefectiveItems
+            occurrenceLocation,
+            "", // Summary
+            "", // Cause
+            ""); // PreventionMeasures
+
+        // 新仕様：未分類状態で開始
+        incident.Status = IncidentStatus.Unclassified;
+        
+        return incident;
+    }
+
     private static void ValidateEnumValue(int value, string parameterName, Type enumType)
     {
         if (!Enum.IsDefined(enumType, value))
@@ -117,10 +161,24 @@ public class Incident : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// 事務員が編集可能な項目のみ更新
+    /// </summary>
+    public void UpdateClerkEditableFields(string title, string description, string incidentDetails, 
+        DateTime occurrenceDate, string occurrenceLocation)
+    {
+        Title = title ?? throw new ArgumentNullException(nameof(title));
+        Description = description ?? throw new ArgumentNullException(nameof(description));
+        IncidentDetails = incidentDetails ?? throw new ArgumentNullException(nameof(incidentDetails));
+        OccurrenceDate = occurrenceDate;
+        OccurrenceLocation = occurrenceLocation ?? "";
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Unassign()
     {
         AssignedToId = null;
-        Status = IncidentStatus.Open;
+        Status = IncidentStatus.Unclassified; // 新仕様：未分類から開始
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -130,11 +188,11 @@ public class Incident : BaseEntity
 
         Status = newStatus;
         
-        if (newStatus == IncidentStatus.Resolved || newStatus == IncidentStatus.Closed)
+        if (newStatus == IncidentStatus.Completed || newStatus == IncidentStatus.PreventionProposed || newStatus == IncidentStatus.EffectivenessConfirmed)
         {
             ResolvedDate = DateTime.UtcNow;
         }
-        else if (newStatus == IncidentStatus.Open || newStatus == IncidentStatus.InProgress)
+        else if (newStatus == IncidentStatus.Unclassified || newStatus == IncidentStatus.Pending || newStatus == IncidentStatus.InProgress)
         {
             ResolvedDate = null;
         }
@@ -147,6 +205,7 @@ public class Incident : BaseEntity
         Priority = newPriority;
         UpdatedAt = DateTime.UtcNow;
     }
+
 
     public void UpdateDetails(string title, string description, string category)
     {
@@ -195,34 +254,34 @@ public class Incident : BaseEntity
             throw new ArgumentException("Resolution cannot be empty", nameof(resolution));
 
         Resolution = resolution;
-        Status = IncidentStatus.Resolved;
+        Status = IncidentStatus.Completed; // 新仕様：対応済
         ResolvedDate = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void Close()
     {
-        if (Status != IncidentStatus.Resolved)
-            throw new InvalidOperationException("Incident must be resolved before it can be closed");
+        if (Status != IncidentStatus.Completed)
+            throw new InvalidOperationException("Incident must be completed before it can be closed");
 
-        Status = IncidentStatus.Closed;
+        Status = IncidentStatus.EffectivenessConfirmed; // 新仕様：有効性確認済
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void Cancel()
     {
-        Status = IncidentStatus.Cancelled;
+        Status = IncidentStatus.EffectivenessConfirmed; // 新仕様：キャンセルも有効性確認済として扱う
         UpdatedAt = DateTime.UtcNow;
     }
 
     public bool IsResolved()
     {
-        return Status == IncidentStatus.Resolved || Status == IncidentStatus.Closed;
+        return Status == IncidentStatus.Completed || Status == IncidentStatus.PreventionProposed || Status == IncidentStatus.EffectivenessConfirmed;
     }
 
     public bool IsActive()
     {
-        return Status == IncidentStatus.Open || Status == IncidentStatus.InProgress;
+        return Status == IncidentStatus.Unclassified || Status == IncidentStatus.Pending || Status == IncidentStatus.InProgress;
     }
 
     public TimeSpan GetResolutionTime()
@@ -289,4 +348,158 @@ public class Incident : BaseEntity
         ExpectedResolutionDate = expectedResolutionDate;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    #region 新ワークフロー関連メソッド
+
+    // EnableNewWorkflowメソッドは削除 - Statusに統合
+
+    /// <summary>
+    /// インシデントを分類する（未分類 → 未対応）
+    /// </summary>
+    public void Classify(int troubleTypeId, int damageTypeId, int warehouseId, 
+        int shippingCompanyId, int totalShipments, int defectiveItems, 
+        Priority priority, DateTime dueDate)
+    {
+        if (Status != IncidentStatus.Unclassified)
+            throw new InvalidOperationException("未分類状態のインシデントのみ分類可能です");
+            
+        TroubleTypeId = troubleTypeId;
+        DamageTypeId = damageTypeId;
+        WarehouseId = warehouseId;
+        ShippingCompanyId = shippingCompanyId;
+        TotalShipments = totalShipments;
+        DefectiveItems = defectiveItems;
+        Priority = priority;
+        DueDate = dueDate;
+        
+        Status = IncidentStatus.Pending; // 新仕様：未対応
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 対応を開始する（未対応 → 対応中）
+    /// </summary>
+    public void StartResponse()
+    {
+        if (Status != IncidentStatus.Pending)
+            throw new InvalidOperationException("未対応状態のインシデントのみ対応開始可能です");
+            
+        ResponseStartDate = DateTime.UtcNow;
+        Status = IncidentStatus.InProgress; // 新仕様：対応中
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 原因を入力する（対応中状態を維持）
+    /// </summary>
+    public void AnalyzeCause(string cause)
+    {
+        if (Status != IncidentStatus.InProgress)
+            throw new InvalidOperationException("対応中状態のインシデントのみ原因入力可能です");
+            
+        Cause = cause ?? throw new ArgumentNullException(nameof(cause));
+        CauseAnalysisDate = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 対応を完了する（対応中 → 対応済）
+    /// </summary>
+    public void CompleteResponse(string responseContent)
+    {
+        if (Status != IncidentStatus.InProgress)
+            throw new InvalidOperationException("対応中状態のインシデントのみ対応完了可能です");
+            
+        ResponseContent = responseContent ?? throw new ArgumentNullException(nameof(responseContent));
+        CompletionDate = DateTime.UtcNow;
+        Status = IncidentStatus.Completed; // 新仕様：対応済
+        ResolvedDate = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 再発防止策を提案する（対応済 → 再発防止策提案済）
+    /// </summary>
+    public void ProposePreventionMeasures(string preventionMeasures)
+    {
+        if (Status != IncidentStatus.Completed)
+            throw new InvalidOperationException("対応済状態のインシデントのみ再発防止策提案可能です");
+            
+        PreventionMeasures = preventionMeasures ?? throw new ArgumentNullException(nameof(preventionMeasures));
+        PreventionProposalDate = DateTime.UtcNow;
+        Status = IncidentStatus.PreventionProposed; // 新仕様：再発防止策提案済
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// 有効性を確認する（再発防止策提案済 → 有効性確認済）
+    /// </summary>
+    public void ConfirmEffectiveness(string effectivenessStatus, string effectivenessComment)
+    {
+        if (Status != IncidentStatus.PreventionProposed)
+            throw new InvalidOperationException("再発防止策提案済状態のインシデントのみ有効性確認可能です");
+            
+        EffectivenessComment = effectivenessComment ?? throw new ArgumentNullException(nameof(effectivenessComment));
+        EffectivenessConfirmationDate = DateTime.UtcNow;
+        EffectivenessDate = DateTime.UtcNow; // 既存フィールドも更新
+        
+        // effectivenessStatusをEffectivenessStatus enumに変換
+        if (Enum.TryParse<EffectivenessStatus>(effectivenessStatus, out var status))
+        {
+            EffectivenessStatus = status;
+        }
+        
+        Status = IncidentStatus.EffectivenessConfirmed; // 新仕様：有効性確認済
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    // IsWorkflowEnabledメソッドは削除 - 新仕様では常に新ワークフロー
+
+    /// <summary>
+    /// 現在のワークフローステータスに基づいて次に可能なアクションを取得
+    /// </summary>
+    public List<string> GetAvailableWorkflowActions(string userRole)
+    {
+        var actions = new List<string>();
+        
+        switch (Status)
+        {
+            case IncidentStatus.Unclassified:
+                if (userRole == "Incident Manager")
+                    actions.Add("classify");
+                break;
+                
+            case IncidentStatus.Pending:
+                if (userRole == "Warehouse Staff")
+                    actions.Add("start-response");
+                break;
+                
+            case IncidentStatus.InProgress:
+                if (userRole == "Warehouse Staff")
+                {
+                    if (string.IsNullOrEmpty(Cause))
+                        actions.Add("analyze-cause");
+                    actions.Add("complete-response");
+                }
+                break;
+                
+            case IncidentStatus.Completed:
+                if (userRole == "Warehouse Staff")
+                    actions.Add("propose-prevention");
+                break;
+                
+            case IncidentStatus.PreventionProposed:
+                if (userRole == "Incident Manager")
+                    actions.Add("confirm-effectiveness");
+                break;
+                
+            case IncidentStatus.EffectivenessConfirmed:
+                // 完了状態 - アクションなし
+                break;
+        }
+        
+        return actions;
+    }
+
+    #endregion
 }

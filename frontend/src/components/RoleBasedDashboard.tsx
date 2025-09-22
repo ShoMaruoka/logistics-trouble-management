@@ -17,7 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { IncidentForm } from '@/components/incident-form';
+import { RoleBasedIncidentForm } from '@/components/role-based-incident-form';
+import { apiClient } from '@/lib/api-client';
 import { useUpdateIncident } from '@/lib/hooks';
 import type { Incident, CreateIncidentDto, UpdateIncidentDto } from '@/lib/types';
 import { 
@@ -56,7 +57,22 @@ export function RoleBasedDashboard() {
     try {
       if (editingIncident) {
         console.log('RoleBasedDashboard updating incident:', editingIncident.id, data);
-        await updateIncident(editingIncident.id, data as UpdateIncidentDto);
+        
+        // 事務員が自分のインシデントを編集する場合は専用APIを使用
+        if (user?.roleId === 4 && editingIncident.reportedById === user.id) {
+          const clerkData = data as any;
+          await apiClient.updateClerkIncident(editingIncident.id, {
+            title: clerkData.title,
+            description: clerkData.description,
+            incidentDetails: clerkData.incidentDetails,
+            occurrenceDate: clerkData.occurrenceDate,
+            occurrenceLocation: clerkData.occurrenceLocation,
+            reportedById: user.id,
+          });
+        } else {
+          await updateIncident(editingIncident.id, data as UpdateIncidentDto);
+        }
+        
         console.log('RoleBasedDashboard update completed successfully');
       }
       setIsDialogOpen(false);
@@ -250,7 +266,7 @@ export function RoleBasedDashboard() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto">
-              <IncidentForm
+              <RoleBasedIncidentForm
                 incident={editingIncident}
                 onSubmit={handleFormSubmit}
                 loading={updateLoading}

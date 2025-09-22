@@ -1,4 +1,5 @@
 using LogisticsTroubleManagement.Core.DTOs;
+using LogisticsTroubleManagement.Core.Services;
 using LogisticsTroubleManagement.Domain.Entities;
 using LogisticsTroubleManagement.Domain.Enums;
 using LogisticsTroubleManagement.Domain.Repositories;
@@ -19,6 +20,7 @@ public class IncidentsController : BaseController
     private readonly IUserRepository _userRepository;
     private readonly IncidentDomainService _incidentDomainService;
     private readonly IMasterDataResolverService _masterDataResolver;
+    private readonly IWorkflowValidationService _workflowValidationService;
     private readonly ILogger<IncidentsController> _logger;
 
     // 期待される解決時間の定数（デフォルト3日）
@@ -30,6 +32,7 @@ public class IncidentsController : BaseController
         IUserRepository userRepository,
         IncidentDomainService incidentDomainService,
         IMasterDataResolverService masterDataResolver,
+        IWorkflowValidationService workflowValidationService,
         ILogger<IncidentsController> logger)
     {
         _unitOfWork = unitOfWork;
@@ -37,6 +40,7 @@ public class IncidentsController : BaseController
         _userRepository = userRepository;
         _incidentDomainService = incidentDomainService;
         _masterDataResolver = masterDataResolver;
+        _workflowValidationService = workflowValidationService;
         _logger = logger;
     }
 
@@ -294,6 +298,102 @@ public class IncidentsController : BaseController
         {
             _logger.LogError(ex, "インシデント作成中にエラーが発生しました。");
             return StatusCode(500, new { Error = "インシデントの作成中にエラーが発生しました。" });
+        }
+    }
+
+    // POST: api/incidents/clerk
+    [HttpPost("clerk")]
+    public async Task<ActionResult<IncidentDto>> CreateClerkIncident([FromBody] ClerkIncidentDto clerkDto)
+    {
+        try
+        {
+            if (clerkDto == null)
+            {
+                return BadRequest(new { Error = "リクエストボディが空です。" });
+            }
+
+            _logger.LogInformation("事務員インシデント作成リクエスト: {@ClerkDto}", clerkDto);
+
+            // 報告者の存在確認
+            var reportedBy = await _userRepository.GetByIdAsync(clerkDto.ReportedById);
+            if (reportedBy == null)
+            {
+                return BadRequest(new { Error = "指定された報告者が存在しません。" });
+            }
+
+            // 事務員専用のインシデント作成（enum検証をスキップ）
+            var newIncident = Incident.CreateForClerk(
+                clerkDto.Title,
+                clerkDto.Description,
+                clerkDto.ReportedById,
+                clerkDto.IncidentDetails,
+                clerkDto.OccurrenceDate,
+                clerkDto.OccurrenceLocation
+            );
+
+            await _incidentRepository.AddAsync(newIncident);
+            await _unitOfWork.SaveChangesAsync();
+
+            var incidentDto = await ConvertToDtoAsync(newIncident);
+
+            _logger.LogInformation("事務員インシデント作成成功: ID={Id}", newIncident.Id);
+            return CreatedAtAction(nameof(GetIncident), new { id = newIncident.Id }, incidentDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "事務員インシデント作成中にエラーが発生しました。");
+            return StatusCode(500, new { Error = "インシデントの作成中にエラーが発生しました。" });
+        }
+    }
+
+    // PUT: api/incidents/clerk/{id}
+    [HttpPut("clerk/{id}")]
+    public async Task<ActionResult<IncidentDto>> UpdateClerkIncident(int id, [FromBody] ClerkIncidentDto clerkDto)
+    {
+        try
+        {
+            if (clerkDto == null)
+            {
+                return BadRequest(new { Error = "リクエストボディが空です。" });
+            }
+
+            _logger.LogInformation("事務員インシデント更新リクエスト ID: {Id}, Data: {@ClerkDto}", id, clerkDto);
+
+            // インシデントの存在確認
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            // 権限チェック：事務員は自分が報告したインシデントのみ編集可能
+            var currentUserId = GetCurrentUserId();
+            if (incident.ReportedById != currentUserId)
+            {
+                return Forbid("自分が報告したインシデントのみ編集できます。");
+            }
+
+            // 事務員が編集可能な項目のみ更新
+            incident.UpdateClerkEditableFields(
+                clerkDto.Title,
+                clerkDto.Description,
+                clerkDto.IncidentDetails,
+                clerkDto.OccurrenceDate,
+                clerkDto.OccurrenceLocation
+            );
+
+            await _incidentRepository.UpdateAsync(incident);
+            await _unitOfWork.SaveChangesAsync();
+
+            var incidentDto = await ConvertToDtoAsync(incident);
+
+            _logger.LogInformation("事務員インシデント更新成功: ID={Id}", incident.Id);
+            return Ok(incidentDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "事務員インシデント更新中にエラーが発生しました。");
+            return StatusCode(500, new { Error = "インシデントの更新中にエラーが発生しました。" });
         }
     }
 
@@ -741,4 +841,343 @@ public class IncidentsController : BaseController
             return await ConvertToDtoAsync(incidents);
         }
     }
+
+    #region 新ワークフロー関連エンドポイント
+
+    /// <summary>
+    /// 新ワークフローを有効化する
+    /// </summary>
+    [HttpPost("{id}/enable-workflow")]
+    public async Task<ActionResult<WorkflowActionResultDto>> EnableWorkflow(int id)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            // 新仕様では常に新ワークフローのため、このチェックは不要
+
+            // EnableNewWorkflowは削除 - 新仕様では常に新ワークフロー
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} のワークフローを有効化しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "ワークフローが有効化されました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ワークフロー有効化中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "ワークフローの有効化中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// インシデントを分類する（未分類 → 未対応）
+    /// </summary>
+    [HttpPost("{id}/classify")]
+    [Authorize(Roles = "Admin,Incident Manager")]
+    public async Task<ActionResult<WorkflowActionResultDto>> ClassifyIncident(int id, [FromBody] ClassifyIncidentDto dto)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            // 新仕様では常に新ワークフロー
+
+            // マスタデータ存在チェック
+            var masterDataValid = await _workflowValidationService.ValidateMasterDataReferencesAsync(
+                dto.TroubleTypeId, dto.DamageTypeId, dto.WarehouseId, dto.ShippingCompanyId);
+            if (!masterDataValid)
+            {
+                return BadRequest(new { Error = "指定されたマスタデータが存在しません。" });
+            }
+
+            // 分類データの妥当性チェック
+            if (!_workflowValidationService.ValidateClassificationData(dto.TotalShipments, dto.DefectiveItems))
+            {
+                return BadRequest(new { Error = "分類データが不正です。不良品数は出荷総数以下である必要があります。" });
+            }
+
+            // 対応期限の妥当性チェック
+            if (!_workflowValidationService.ValidateDueDate(dto.DueDate))
+            {
+                return BadRequest(new { Error = "対応期限が不正です。未来の日付を指定してください。" });
+            }
+
+            incident.Classify(dto.TroubleTypeId, dto.DamageTypeId, dto.WarehouseId, 
+                dto.ShippingCompanyId, dto.TotalShipments, dto.DefectiveItems, 
+                dto.Priority, dto.DueDate);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} を分類しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "インシデントが分類されました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "インシデント分類中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "インシデントの分類中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// 対応を開始する（未対応 → 対応中）
+    /// </summary>
+    [HttpPost("{id}/start-response")]
+    [Authorize(Roles = "Admin,Warehouse Staff")]
+    public async Task<ActionResult<WorkflowActionResultDto>> StartResponse(int id)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            incident.StartResponse();
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} の対応を開始しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "対応を開始しました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "対応開始中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "対応開始中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// 原因を入力する（対応中状態を維持）
+    /// </summary>
+    [HttpPost("{id}/analyze-cause")]
+    [Authorize(Roles = "Admin,Warehouse Staff")]
+    public async Task<ActionResult<WorkflowActionResultDto>> AnalyzeCause(int id, [FromBody] AnalyzeCauseDto dto)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            incident.AnalyzeCause(dto.Cause);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} の原因を入力しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "原因が入力されました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "原因入力中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "原因入力中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// 対応を完了する（対応中 → 対応済）
+    /// </summary>
+    [HttpPost("{id}/complete-response")]
+    [Authorize(Roles = "Admin,Warehouse Staff")]
+    public async Task<ActionResult<WorkflowActionResultDto>> CompleteResponse(int id, [FromBody] CompleteResponseDto dto)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            incident.CompleteResponse(dto.ResponseContent);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} の対応を完了しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "対応が完了しました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "対応完了中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "対応完了中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// 再発防止策を提案する（対応済 → 再発防止策提案済）
+    /// </summary>
+    [HttpPost("{id}/propose-prevention")]
+    [Authorize(Roles = "Admin,Warehouse Staff")]
+    public async Task<ActionResult<WorkflowActionResultDto>> ProposePreventionMeasures(int id, [FromBody] ProposePreventionDto dto)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            incident.ProposePreventionMeasures(dto.PreventionMeasures);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} の再発防止策を提案しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "再発防止策が提案されました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "再発防止策提案中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "再発防止策提案中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// 有効性を確認する（再発防止策提案済 → 有効性確認済）
+    /// </summary>
+    [HttpPost("{id}/confirm-effectiveness")]
+    [Authorize(Roles = "Admin,Incident Manager")]
+    public async Task<ActionResult<WorkflowActionResultDto>> ConfirmEffectiveness(int id, [FromBody] ConfirmEffectivenessDto dto)
+    {
+        try
+        {
+            var incident = await _incidentRepository.GetByIdAsync(id);
+            if (incident == null)
+            {
+                return NotFound(new { Error = "指定されたインシデントが見つかりません。" });
+            }
+
+            incident.ConfirmEffectiveness(dto.EffectivenessStatus, dto.EffectivenessComment);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("インシデント {IncidentId} の有効性を確認しました", id);
+
+            return Ok(new WorkflowActionResultDto
+            {
+                Success = true,
+                Message = "有効性が確認されました。",
+                NewStatus = incident.Status,
+                AvailableActions = incident.GetAvailableWorkflowActions(GetCurrentUserRole())
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "有効性確認中にエラーが発生しました: ID={Id}", id);
+            return StatusCode(500, new { Error = "有効性確認中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// ワークフロー統計を取得する
+    /// </summary>
+    [HttpGet("workflow-statistics")]
+    public async Task<ActionResult<WorkflowStatisticsDto>> GetWorkflowStatistics()
+    {
+        try
+        {
+            var incidents = await _incidentRepository.GetAllAsync();
+
+            var stats = new WorkflowStatisticsDto
+            {
+                UnclassifiedCount = incidents.Count(i => i.Status == IncidentStatus.Unclassified),
+                PendingCount = incidents.Count(i => i.Status == IncidentStatus.Pending),
+                InProgressCount = incidents.Count(i => i.Status == IncidentStatus.InProgress),
+                CompletedCount = incidents.Count(i => i.Status == IncidentStatus.Completed),
+                PreventionProposedCount = incidents.Count(i => i.Status == IncidentStatus.PreventionProposed),
+                EffectivenessConfirmedCount = incidents.Count(i => i.Status == IncidentStatus.EffectivenessConfirmed),
+                TotalWithWorkflow = incidents.Count(), // 新仕様では全て新ワークフロー
+                TotalLegacyMode = 0 // レガシーモードはなし
+            };
+
+            return Ok(stats);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ワークフロー統計取得中にエラーが発生しました");
+            return StatusCode(500, new { Error = "ワークフロー統計の取得中にエラーが発生しました。" });
+        }
+    }
+
+    /// <summary>
+    /// 現在のユーザーのロールを取得する（ヘルパーメソッド）
+    /// </summary>
+    private new string GetCurrentUserRole()
+    {
+        // BaseControllerから継承したGetCurrentUserRoleメソッドを使用
+        return base.GetCurrentUserRole() ?? "Unknown";
+    }
+
+    #endregion
 }

@@ -3,6 +3,33 @@ export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type IncidentStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed';
 export type EffectivenessStatus = 'NotImplemented' | 'Implemented';
 
+// 新ワークフロー関連型定義
+export type WorkflowMode = 'legacy' | 'new';
+
+// 新ワークフローステータス（6段階）
+export type WorkflowStatus = 
+  | 'Unclassified'           // 未分類
+  | 'Pending'                // 未対応
+  | 'InProgress'             // 対応中
+  | 'Completed'              // 対応済
+  | 'PreventionProposed'     // 再発防止策提案済
+  | 'EffectivenessConfirmed' // 有効性確認済
+
+// レガシーステータス（既存5段階）
+export type LegacyIncidentStatus = 
+  | 'Open'        // 未解決
+  | 'InProgress'  // 対応中
+  | 'Resolved'    // 解決済み
+  | 'Closed'      // 完了
+  | 'Cancelled'   // キャンセル
+
+// 統合ステータス情報
+export interface IncidentStatusInfo {
+  mode: WorkflowMode;
+  legacyStatus?: LegacyIncidentStatus;
+  workflowStatus?: WorkflowStatus;
+}
+
 // マスタデータ型定義
 export interface TroubleType {
   id: number;
@@ -166,6 +193,107 @@ export interface Incident {
   effectivenessCheckStatus?: '実施' | '実施中' | '未実施';
   effectivenessCheckDate?: string;
   effectivenessCheckComment?: string;
+}
+
+// 新ワークフロー対応版Incident型
+export interface IncidentWithWorkflow extends Incident {
+  // ワークフロー関連プロパティ
+  workflowStatus?: WorkflowStatus;
+  workflowMode: WorkflowMode;
+  
+  // 新ワークフロー日付フィールド
+  dueDate?: string;
+  responseStartDate?: string;
+  causeAnalysisDate?: string;
+  completionDate?: string;
+  preventionProposalDate?: string;
+  effectivenessConfirmationDate?: string;
+  
+  // 新作業内容フィールド
+  responseContent?: string;
+  
+  // ワークフローデータ（段階的に追加される情報）
+  workflowData?: IncidentWorkflowData;
+}
+
+// ワークフローデータ
+export interface IncidentWorkflowData {
+  // 分類段階で追加される情報
+  totalShipments?: number;
+  defectiveItems?: number;
+  occurrenceLocation?: string;
+  priority?: Priority;
+  dueDate?: string;
+  
+  // ワークフロー進捗日付
+  responseStartDate?: string;
+  causeAnalysisDate?: string;
+  completionDate?: string;
+  preventionProposalDate?: string;
+  effectivenessConfirmationDate?: string;
+  
+  // 作業内容
+  cause?: string;
+  responseContent?: string;
+  preventionMeasures?: string;
+  effectivenessStatus?: string;
+  effectivenessComment?: string;
+}
+
+// ワークフロー関連DTO型定義
+export interface WorkflowActionResultDto {
+  success: boolean;
+  message: string;
+  newStatus?: WorkflowStatus;
+  availableActions: string[];
+}
+
+export interface ClassifyIncidentDto {
+  incidentId: number;
+  troubleTypeId: number;
+  damageTypeId: number;
+  warehouseId: number;
+  shippingCompanyId: number;
+  totalShipments: number;
+  defectiveItems: number;
+  priority: Priority;
+  dueDate: string;
+}
+
+export interface StartResponseDto {
+  incidentId: number;
+}
+
+export interface AnalyzeCauseDto {
+  incidentId: number;
+  cause: string;
+}
+
+export interface CompleteResponseDto {
+  incidentId: number;
+  responseContent: string;
+}
+
+export interface ProposePreventionDto {
+  incidentId: number;
+  preventionMeasures: string;
+}
+
+export interface ConfirmEffectivenessDto {
+  incidentId: number;
+  effectivenessStatus: string;
+  effectivenessComment: string;
+}
+
+export interface WorkflowStatisticsDto {
+  unclassifiedCount: number;
+  pendingCount: number;
+  inProgressCount: number;
+  completedCount: number;
+  preventionProposedCount: number;
+  effectivenessConfirmedCount: number;
+  totalWithWorkflow: number;
+  totalLegacyMode: number;
 }
 
 // 既存の型定義（後方互換性のため）
